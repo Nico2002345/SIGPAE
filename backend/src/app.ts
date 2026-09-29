@@ -9,6 +9,7 @@ import { gruposRouter } from "./modules/estructura/grupos.routes.js";
 import { institucionesRouter } from "./modules/estructura/instituciones.routes.js";
 import { sedesRouter } from "./modules/estructura/sedes.routes.js";
 import { zonasRouter } from "./modules/estructura/zonas.routes.js";
+import { qrRouter } from "./modules/qr/qr.routes.js";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes.js";
 
 export function createApp(): Express {
@@ -30,6 +31,7 @@ export function createApp(): Express {
   app.use("/grados", gradosRouter);
   app.use("/grupos", gruposRouter);
   app.use("/estudiantes", estudiantesRouter);
+  app.use("/qr", qrRouter);
 
   app.use(errorHandler);
 

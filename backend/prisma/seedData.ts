@@ -61,6 +61,10 @@ export const PERMISOS = [
     modulo: "estudiantes",
     descripcion: "Vincular un estudiante provisional con su registro oficial de SIMAT",
   },
+
+  { codigo: "qr.generar", modulo: "qr", descripcion: "Generar, reemitir o revocar el QR de un estudiante" },
+  { codigo: "qr.ver", modulo: "qr", descripcion: "Consultar el QR e imagen de carnet de un estudiante" },
+  { codigo: "qr.escanear", modulo: "qr", descripcion: "Resolver un QR escaneado en campo para identificar al estudiante" },
 ];
 
 // Permisos otorgados a roles distintos de MAESTRO (que siempre recibe todos).
@@ -73,6 +77,9 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
     "estudiantes.editar_provisional",
     "estudiantes.retirar",
   ],
+  OPERADOR: ["qr.escanear"],
+  MANIPULADORA: ["qr.escanear"],
+  COORDINADOR_LOGISTICO: ["qr.escanear"],
 };
 
 export async function seedRolesYPermisos(prisma: PrismaClient): Promise<{ maestro: Rol }> {
