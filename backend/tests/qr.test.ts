@@ -111,6 +111,28 @@ describe("QR de estudiantes", () => {
     expect(duplicado.status).toBe(409);
   });
 
+  it("no genera ni reemite un QR para un estudiante retirado", async () => {
+    const estudianteRetirado = await prisma.estudiante.create({
+      data: {
+        idPae: `PAE-2026-${String(sufijo).slice(-5)}9`,
+        tipoIdentificador: "PAE",
+        nombres: "Retirado",
+        apellidos: "Test",
+        sedeId,
+        institucionId,
+        origen: "SIMAT",
+        estado: "RETIRADO",
+      },
+    });
+
+    const generar = await request(app)
+      .post(`/qr/estudiantes/${estudianteRetirado.id}`)
+      .set("Authorization", `Bearer ${tokenMaestro}`);
+    expect(generar.status).toBe(409);
+
+    await prisma.estudiante.delete({ where: { id: estudianteRetirado.id } });
+  });
+
   it("genera la imagen del QR como data URL", async () => {
     const res = await request(app)
       .get(`/qr/estudiantes/${estudianteId}/imagen`)

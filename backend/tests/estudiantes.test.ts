@@ -206,6 +206,12 @@ describe("Estudiantes (oficiales y provisionales)", () => {
       .set("Authorization", `Bearer ${tokenMaestro}`);
     expect(detalleProvisional.body.estudiante.estado).toBe("VINCULADO");
 
+    const intentoEditar = await request(app)
+      .patch(`/estudiantes/${provisionalId}`)
+      .set("Authorization", `Bearer ${tokenDocente}`)
+      .send({ genero: "M" });
+    expect(intentoEditar.status).toBe(409);
+
     const reintento = await request(app)
       .post(`/estudiantes/${provisionalId}/vincular-oficial`)
       .set("Authorization", `Bearer ${tokenMaestro}`)
@@ -215,6 +221,57 @@ describe("Estudiantes (oficiales y provisionales)", () => {
     await prisma.vinculacionProvisional.deleteMany({ where: { estudianteTemporalId: provisionalId } });
     await prisma.historicoEstudiante.deleteMany({ where: { estudianteId: { in: [provisionalId, estudianteOficialId] } } });
     await prisma.estudiante.delete({ where: { id: provisionalId } });
+  });
+
+  it("rechaza editar con un grado y un grupo que no corresponden entre sí", async () => {
+    const gradoA = await prisma.grado.create({ data: { nombre: `Grado A ${sufijo}`, nivel: 1 } });
+    const gradoB = await prisma.grado.create({ data: { nombre: `Grado B ${sufijo}`, nivel: 2 } });
+    const grupoDeGradoB = await prisma.grupo.create({
+      data: { sedeId, gradoId: gradoB.id, nombre: "01", jornadaEscolar: "MANANA", anioLectivo: 2026 },
+    });
+
+    const res = await request(app)
+      .patch(`/estudiantes/${estudianteOficialId}`)
+      .set("Authorization", `Bearer ${tokenMaestro}`)
+      .send({ gradoId: gradoA.id, grupoId: grupoDeGradoB.id });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/no pertenece al grado/);
+
+    await prisma.grupo.delete({ where: { id: grupoDeGradoB.id } });
+    await prisma.grado.deleteMany({ where: { id: { in: [gradoA.id, gradoB.id] } } });
+  });
+
+  it("rechaza crear un estudiante con un número de documento ya usado por otro", async () => {
+    const documentoDuplicado = `DOC-${sufijo}`;
+
+    const primero = await request(app)
+      .post("/estudiantes")
+      .set("Authorization", `Bearer ${tokenMaestro}`)
+      .send({
+        idPae: `PAE-2026-${String(sufijo).slice(-5)}5`,
+        documentoNumero: documentoDuplicado,
+        nombres: "Documento",
+        apellidos: "Uno",
+        sedeId,
+        institucionId,
+      });
+    expect(primero.status).toBe(201);
+
+    const segundo = await request(app)
+      .post("/estudiantes")
+      .set("Authorization", `Bearer ${tokenMaestro}`)
+      .send({
+        idPae: `PAE-2026-${String(sufijo).slice(-5)}6`,
+        documentoNumero: documentoDuplicado,
+        nombres: "Documento",
+        apellidos: "Dos",
+        sedeId,
+        institucionId,
+      });
+    expect(segundo.status).toBe(409);
+
+    await prisma.estudiante.delete({ where: { id: primero.body.estudiante.id } });
   });
 
   it("filtra el listado de estudiantes por sede y por texto de búsqueda", async () => {

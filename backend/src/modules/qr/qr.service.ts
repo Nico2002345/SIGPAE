@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import QRCode from "qrcode";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/errorHandler.js";
-import { obtenerEstudianteOFallar } from "../estudiantes/estudiantes.service.js";
+import { ESTADOS_ESTUDIANTE_HABILITADOS, obtenerEstudianteOFallar } from "../estudiantes/estudiantes.service.js";
 
 function generarToken(): string {
   // Token opaco, no derivado del id_pae ni del id interno: el id_pae es
@@ -12,8 +12,18 @@ function generarToken(): string {
   return randomBytes(32).toString("base64url");
 }
 
+function verificarEstudianteHabilitado(estudiante: { estado: string }) {
+  if (!ESTADOS_ESTUDIANTE_HABILITADOS.includes(estudiante.estado as (typeof ESTADOS_ESTUDIANTE_HABILITADOS)[number])) {
+    throw new HttpError(
+      409,
+      `No se puede emitir un QR para un estudiante en estado ${estudiante.estado}`,
+    );
+  }
+}
+
 export async function generarQr(estudianteId: string) {
-  await obtenerEstudianteOFallar(estudianteId);
+  const estudiante = await obtenerEstudianteOFallar(estudianteId);
+  verificarEstudianteHabilitado(estudiante);
 
   const existente = await prisma.qrCode.findUnique({ where: { estudianteId } });
   if (existente) {
@@ -37,6 +47,9 @@ export async function generarQr(estudianteId: string) {
 }
 
 export async function reemitirQr(estudianteId: string) {
+  const estudiante = await obtenerEstudianteOFallar(estudianteId);
+  verificarEstudianteHabilitado(estudiante);
+
   const actual = await prisma.qrCode.findUnique({ where: { estudianteId } });
   if (!actual) {
     throw new HttpError(404, "El estudiante no tiene un QR generado todavía");

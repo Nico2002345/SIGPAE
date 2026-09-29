@@ -181,6 +181,55 @@ describe("Asistencia", () => {
     expect(res.status).toBe(403);
   });
 
+  it("dos resoluciones simultáneas de la misma solicitud solo aplican una", async () => {
+    const estudianteConcurrente = await prisma.estudiante.create({
+      data: {
+        idPae: `PAE-2026-${String(sufijo).slice(-4)}99`,
+        tipoIdentificador: "PAE",
+        nombres: "Concurrente",
+        apellidos: "Test",
+        sedeId,
+        institucionId,
+        origen: "SIMAT",
+      },
+    });
+    // La jornada ya está cerrada en este punto del archivo: se crea la
+    // asistencia directamente ya bloqueada, como quedaría tras un cierre.
+    const asistenciaConcurrente = await prisma.asistencia.create({
+      data: {
+        estudianteId: estudianteConcurrente.id,
+        jornadaId,
+        estado: "ASISTIO",
+        usuarioId: usuarioDocenteId,
+        bloqueada: true,
+      },
+    });
+    const solicitudConcurrente = await request(app)
+      .post(`/asistencia/${asistenciaConcurrente.id}/solicitudes`)
+      .set("Authorization", `Bearer ${tokenDocente}`)
+      .send({ valorPropuesto: "NO_ASISTIO", motivo: "Prueba de concurrencia" });
+    expect(solicitudConcurrente.status).toBe(201);
+
+    const [primera, segunda] = await Promise.all([
+      request(app)
+        .post(`/asistencia/solicitudes/${solicitudConcurrente.body.solicitud.id}/resolver`)
+        .set("Authorization", `Bearer ${tokenMaestro}`)
+        .send({ aprobar: true }),
+      request(app)
+        .post(`/asistencia/solicitudes/${solicitudConcurrente.body.solicitud.id}/resolver`)
+        .set("Authorization", `Bearer ${tokenMaestro}`)
+        .send({ aprobar: false }),
+    ]);
+
+    const estados = [primera.status, segunda.status];
+    expect(estados.filter((s) => s === 200)).toHaveLength(1);
+    expect(estados.filter((s) => s === 409)).toHaveLength(1);
+
+    await prisma.solicitudModificacion.deleteMany({ where: { asistenciaId: asistenciaConcurrente.id } });
+    await prisma.asistencia.delete({ where: { id: asistenciaConcurrente.id } });
+    await prisma.estudiante.delete({ where: { id: estudianteConcurrente.id } });
+  });
+
   it("el maestro aprueba la solicitud y el estado de la asistencia cambia", async () => {
     const res = await request(app)
       .post(`/asistencia/solicitudes/${solicitudId}/resolver`)

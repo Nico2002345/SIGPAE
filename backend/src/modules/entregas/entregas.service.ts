@@ -1,9 +1,8 @@
-import type { TipoEntrega } from "@prisma/client";
+import type { Prisma, TipoEntrega } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
-import { obtenerJornadaOFallar } from "../jornadas/jornadas.service.js";
+import { ESTADOS_ESTUDIANTE_HABILITADOS } from "../estudiantes/estudiantes.service.js";
+import { bloquearJornada } from "../jornadas/jornadas.service.js";
 import { resolverToken } from "../qr/qr.service.js";
-
-const ESTADOS_ESTUDIANTE_HABILITADOS = ["ACTIVO", "PROVISIONAL_PENDIENTE"] as const;
 
 interface DatosComunesEntrega {
   estudianteId: string;
@@ -15,8 +14,8 @@ interface DatosComunesEntrega {
   institucionId: number;
 }
 
-function crearRechazo(datos: DatosComunesEntrega, motivoRechazo: string) {
-  return prisma.entrega.create({ data: { ...datos, resultado: "RECHAZADA", motivoRechazo } });
+function crearRechazo(tx: Prisma.TransactionClient, datos: DatosComunesEntrega, motivoRechazo: string) {
+  return tx.entrega.create({ data: { ...datos, resultado: "RECHAZADA", motivoRechazo } });
 }
 
 /**
@@ -26,6 +25,12 @@ function crearRechazo(datos: DatosComunesEntrega, motivoRechazo: string) {
  * que una autorizada. Solo un QR inválido/revocado (resuelto antes de
  * llegar aquí) es un error real, porque ahí no hay estudianteId confiable
  * al cual asociar el intento.
+ *
+ * Todo lo demás corre dentro de una transacción que bloquea la jornada
+ * (FOR UPDATE): dos escaneos casi simultáneos para el mismo estudiante y
+ * jornada quedan serializados, así que la comprobación "¿ya recibió su
+ * ración?" siempre ve el resultado real de cualquier entrega que ya haya
+ * confirmado, sin ventana para una doble ración por carrera.
  */
 export async function registrarEntrega(data: {
   token: string;
@@ -35,54 +40,72 @@ export async function registrarEntrega(data: {
   dispositivoId?: string;
 }) {
   const estudiante = await resolverToken(data.token);
-  const jornada = await obtenerJornadaOFallar(data.jornadaId);
 
-  const datosComunes: DatosComunesEntrega = {
-    estudianteId: estudiante.id,
-    jornadaId: data.jornadaId,
-    tipo: data.tipo,
-    usuarioId: data.usuarioId,
-    dispositivoId: data.dispositivoId,
-    sedeId: jornada.sedeId,
-    institucionId: estudiante.institucionId,
-  };
+  return prisma.$transaction(async (tx) => {
+    const jornada = await bloquearJornada(tx, data.jornadaId);
 
-  if (!ESTADOS_ESTUDIANTE_HABILITADOS.includes(estudiante.estado as (typeof ESTADOS_ESTUDIANTE_HABILITADOS)[number])) {
-    return crearRechazo(datosComunes, `El estudiante no está activo (estado: ${estudiante.estado})`);
-  }
+    const datosComunes: DatosComunesEntrega = {
+      estudianteId: estudiante.id,
+      jornadaId: data.jornadaId,
+      tipo: data.tipo,
+      usuarioId: data.usuarioId,
+      dispositivoId: data.dispositivoId,
+      sedeId: jornada.sedeId,
+      institucionId: estudiante.institucionId,
+    };
 
-  if (estudiante.sedeId !== jornada.sedeId) {
-    return crearRechazo(datosComunes, "El estudiante pertenece a otra sede educativa");
-  }
+    if (
+      !ESTADOS_ESTUDIANTE_HABILITADOS.includes(estudiante.estado as (typeof ESTADOS_ESTUDIANTE_HABILITADOS)[number])
+    ) {
+      return crearRechazo(tx, datosComunes, `El estudiante no está activo (estado: ${estudiante.estado})`);
+    }
 
-  if (jornada.estado !== "ABIERTA" && jornada.estado !== "EN_ENTREGA") {
-    return crearRechazo(datosComunes, "La jornada no está abierta");
-  }
+    if (estudiante.sedeId !== jornada.sedeId) {
+      return crearRechazo(tx, datosComunes, "El estudiante pertenece a otra sede educativa");
+    }
 
-  const asistencia = await prisma.asistencia.findUnique({
-    where: { estudianteId_jornadaId: { estudianteId: estudiante.id, jornadaId: data.jornadaId } },
-  });
-  if (!asistencia || asistencia.estado !== "ASISTIO") {
-    return crearRechazo(datosComunes, "El estudiante no registra asistencia a clases en la jornada actual");
-  }
+    if (jornada.estado !== "ABIERTA" && jornada.estado !== "EN_ENTREGA") {
+      return crearRechazo(tx, datosComunes, "La jornada no está abierta");
+    }
 
-  const entregaNormalPrevia = await prisma.entrega.findFirst({
-    where: { estudianteId: estudiante.id, jornadaId: data.jornadaId, tipo: "NORMAL", resultado: "AUTORIZADA" },
-  });
+    const asistencia = await tx.asistencia.findUnique({
+      where: { estudianteId_jornadaId: { estudianteId: estudiante.id, jornadaId: data.jornadaId } },
+    });
+    if (!asistencia || asistencia.estado !== "ASISTIO") {
+      return crearRechazo(tx, datosComunes, "El estudiante no registra asistencia a clases en la jornada actual");
+    }
 
-  if (data.tipo === "NORMAL" && entregaNormalPrevia) {
-    return crearRechazo(datosComunes, "El estudiante ya recibió su ración normal en esta jornada");
-  }
-  if (data.tipo === "REDISTRIBUCION" && !entregaNormalPrevia) {
-    return crearRechazo(datosComunes, "No hay una entrega normal previa para redistribuir en esta jornada");
-  }
+    const [entregaNormalPrevia, entregaRedistribucionPrevia] = await Promise.all([
+      tx.entrega.findFirst({
+        where: { estudianteId: estudiante.id, jornadaId: data.jornadaId, tipo: "NORMAL", resultado: "AUTORIZADA" },
+      }),
+      tx.entrega.findFirst({
+        where: {
+          estudianteId: estudiante.id,
+          jornadaId: data.jornadaId,
+          tipo: "REDISTRIBUCION",
+          resultado: "AUTORIZADA",
+        },
+      }),
+    ]);
 
-  return prisma.entrega.create({
-    data: {
-      ...datosComunes,
-      entregaOriginalId: data.tipo === "REDISTRIBUCION" ? entregaNormalPrevia!.id : undefined,
-      resultado: "AUTORIZADA",
-    },
+    if (data.tipo === "NORMAL" && entregaNormalPrevia) {
+      return crearRechazo(tx, datosComunes, "El estudiante ya recibió su ración normal en esta jornada");
+    }
+    if (data.tipo === "REDISTRIBUCION" && !entregaNormalPrevia) {
+      return crearRechazo(tx, datosComunes, "No hay una entrega normal previa para redistribuir en esta jornada");
+    }
+    if (data.tipo === "REDISTRIBUCION" && entregaRedistribucionPrevia) {
+      return crearRechazo(tx, datosComunes, "El estudiante ya recibió su ración de redistribución en esta jornada");
+    }
+
+    return tx.entrega.create({
+      data: {
+        ...datosComunes,
+        entregaOriginalId: data.tipo === "REDISTRIBUCION" ? entregaNormalPrevia!.id : undefined,
+        resultado: "AUTORIZADA",
+      },
+    });
   });
 }
 

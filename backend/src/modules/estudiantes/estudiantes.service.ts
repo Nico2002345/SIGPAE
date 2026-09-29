@@ -7,6 +7,11 @@ import { obtenerGrupoOFallar } from "../estructura/grupos.service.js";
 import { obtenerInstitucionOFallar } from "../estructura/instituciones.service.js";
 import { obtenerSedeOFallar } from "../estructura/sedes.service.js";
 
+// Estados de estudiante habilitados para operaciones activas (asistencia,
+// entregas, QR): un estudiante RETIRADO/TRASLADADO/VINCULADO ya no debe
+// poder recibir nuevas credenciales ni registros operativos.
+export const ESTADOS_ESTUDIANTE_HABILITADOS = ["ACTIVO", "PROVISIONAL_PENDIENTE"] as const;
+
 const resumenSelect = {
   id: true,
   idPae: true,
@@ -70,6 +75,12 @@ export async function crearEstudianteOficial(data: {
   if (existente) {
     throw new HttpError(409, "Ya existe un estudiante con ese id_pae");
   }
+  if (data.documentoNumero) {
+    const existenteDoc = await prisma.estudiante.findUnique({ where: { documentoNumero: data.documentoNumero } });
+    if (existenteDoc) {
+      throw new HttpError(409, "Ya existe un estudiante con ese número de documento");
+    }
+  }
 
   return prisma.estudiante.create({
     data: { ...data, tipoIdentificador: "PAE", origen: "SIMAT" },
@@ -94,7 +105,7 @@ export async function crearEstudianteProvisional(data: {
     const total = await prisma.estudiante.count({
       where: { idPae: { startsWith: `TEMP-${anio}-` } },
     });
-    const idPae = `TEMP-${anio}-${String(total + 1 + intento).padStart(6, "0")}`;
+    const idPae = `TEMP-${anio}-${String(total + 1).padStart(6, "0")}`;
 
     try {
       return await prisma.estudiante.create({
@@ -203,14 +214,33 @@ export async function editarEstudiante(
   if (opciones.soloProvisional && actual.origen !== "PROVISIONAL") {
     throw new HttpError(403, "Solo puede editar estudiantes provisionales, no registros oficiales de SIMAT");
   }
+  if (actual.estado === "VINCULADO" || actual.estado === "RETIRADO") {
+    throw new HttpError(
+      409,
+      "Este estudiante ya fue " +
+        (actual.estado === "VINCULADO" ? "vinculado a un registro oficial" : "retirado") +
+        "; el registro queda congelado y no se puede editar directamente",
+    );
+  }
 
+  if (data.documentoNumero && data.documentoNumero !== actual.documentoNumero) {
+    const existenteDoc = await prisma.estudiante.findUnique({ where: { documentoNumero: data.documentoNumero } });
+    if (existenteDoc) {
+      throw new HttpError(409, "Ya existe un estudiante con ese número de documento");
+    }
+  }
+
+  const gradoEfectivo = data.gradoId !== undefined ? data.gradoId : actual.gradoId;
   if (data.gradoId !== undefined && data.gradoId !== null) {
-    await obtenerGradoOFallar(data.gradoId as number);
+    await obtenerGradoOFallar(data.gradoId);
   }
   if (data.grupoId !== undefined && data.grupoId !== null) {
-    const grupo = await obtenerGrupoOFallar(data.grupoId as number);
+    const grupo = await obtenerGrupoOFallar(data.grupoId);
     if (grupo.sedeId !== actual.sedeId) {
       throw new HttpError(400, "El grupo indicado no pertenece a la sede del estudiante");
+    }
+    if (gradoEfectivo != null && grupo.gradoId !== gradoEfectivo) {
+      throw new HttpError(400, "El grupo indicado no pertenece al grado indicado");
     }
   }
 

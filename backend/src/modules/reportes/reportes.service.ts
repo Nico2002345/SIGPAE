@@ -242,11 +242,22 @@ export async function consolidadoPorZona(filtros: FiltrosConsolidado) {
   );
 }
 
+// Vaupés opera en UTC-5 sin horario de verano (offset fijo). fechaHora se
+// guarda como instante UTC real; agrupar con .toISOString().slice(0,10) sin
+// corregir el offset atribuye al día siguiente cualquier entrega registrada
+// entre las 7pm y medianoche hora local, divergiendo de jornada.fecha (que
+// sí está normalizada por normalizarFecha en jornadas.service.ts).
+const OFFSET_COLOMBIA_MS = 5 * 60 * 60 * 1000;
+
+function fechaLocalColombia(fecha: Date): string {
+  return new Date(fecha.getTime() - OFFSET_COLOMBIA_MS).toISOString().slice(0, 10);
+}
+
 export async function consolidadoPorPeriodo(filtros: FiltrosConsolidado) {
   const entregas = await obtenerEntregasAutorizadas(filtros);
   return consolidarPorClave(
     entregas,
-    (e) => e.fechaHora.toISOString().slice(0, 10),
-    (e) => ({ fecha: e.fechaHora.toISOString().slice(0, 10) }),
+    (e) => fechaLocalColombia(e.fechaHora),
+    (e) => ({ fecha: fechaLocalColombia(e.fechaHora) }),
   ).sort((a, b) => String(a.fecha).localeCompare(String(b.fecha)));
 }

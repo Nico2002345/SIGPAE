@@ -1,10 +1,8 @@
 import type { EstadoAsistencia } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/errorHandler.js";
-import { obtenerEstudianteOFallar } from "../estudiantes/estudiantes.service.js";
-import { verificarJornadaAbierta } from "../jornadas/jornadas.service.js";
-
-const ESTADOS_ESTUDIANTE_HABILITADOS = ["ACTIVO", "PROVISIONAL_PENDIENTE"] as const;
+import { ESTADOS_ESTUDIANTE_HABILITADOS } from "../estudiantes/estudiantes.service.js";
+import { bloquearYVerificarJornadaAbierta } from "../jornadas/jornadas.service.js";
 
 export async function registrarAsistencia(data: {
   jornadaId: string;
@@ -13,46 +11,57 @@ export async function registrarAsistencia(data: {
   usuarioId: string;
   dispositivoId?: string;
 }) {
-  const jornada = await verificarJornadaAbierta(data.jornadaId);
-  const estudiante = await obtenerEstudianteOFallar(data.estudianteId);
+  // Todo el flujo corre dentro de la transacción que bloquea la jornada
+  // (FOR UPDATE): si un cierre de jornada está en curso para la misma
+  // jornada, esta llamada espera a que termine y vuelve a leer el estado
+  // ya actualizado, en vez de operar sobre un snapshot desactualizado.
+  return prisma.$transaction(async (tx) => {
+    const jornada = await bloquearYVerificarJornadaAbierta(tx, data.jornadaId);
 
-  if (estudiante.sedeId !== jornada.sedeId) {
-    throw new HttpError(400, "El estudiante no pertenece a la sede de esta jornada");
-  }
-  if (!ESTADOS_ESTUDIANTE_HABILITADOS.includes(estudiante.estado as (typeof ESTADOS_ESTUDIANTE_HABILITADOS)[number])) {
-    throw new HttpError(400, "El estudiante no está activo, no se puede registrar su asistencia");
-  }
-
-  const existente = await prisma.asistencia.findUnique({
-    where: { estudianteId_jornadaId: { estudianteId: data.estudianteId, jornadaId: data.jornadaId } },
-  });
-
-  if (existente) {
-    if (existente.bloqueada) {
-      throw new HttpError(
-        409,
-        "La asistencia de este estudiante ya fue cerrada; use el mecanismo de solicitud de modificación",
-      );
+    const estudiante = await tx.estudiante.findUnique({ where: { id: data.estudianteId } });
+    if (!estudiante) {
+      throw new HttpError(404, "Estudiante no encontrado");
     }
-    return prisma.asistencia.update({
-      where: { id: existente.id },
+    if (estudiante.sedeId !== jornada.sedeId) {
+      throw new HttpError(400, "El estudiante no pertenece a la sede de esta jornada");
+    }
+    if (
+      !ESTADOS_ESTUDIANTE_HABILITADOS.includes(estudiante.estado as (typeof ESTADOS_ESTUDIANTE_HABILITADOS)[number])
+    ) {
+      throw new HttpError(400, "El estudiante no está activo, no se puede registrar su asistencia");
+    }
+
+    const existente = await tx.asistencia.findUnique({
+      where: { estudianteId_jornadaId: { estudianteId: data.estudianteId, jornadaId: data.jornadaId } },
+    });
+
+    if (existente) {
+      if (existente.bloqueada) {
+        throw new HttpError(
+          409,
+          "La asistencia de este estudiante ya fue cerrada; use el mecanismo de solicitud de modificación",
+        );
+      }
+      return tx.asistencia.update({
+        where: { id: existente.id },
+        data: {
+          estado: data.estado,
+          usuarioId: data.usuarioId,
+          dispositivoId: data.dispositivoId,
+          fechaHoraRegistro: new Date(),
+        },
+      });
+    }
+
+    return tx.asistencia.create({
       data: {
+        jornadaId: data.jornadaId,
+        estudianteId: data.estudianteId,
         estado: data.estado,
         usuarioId: data.usuarioId,
         dispositivoId: data.dispositivoId,
-        fechaHoraRegistro: new Date(),
       },
     });
-  }
-
-  return prisma.asistencia.create({
-    data: {
-      jornadaId: data.jornadaId,
-      estudianteId: data.estudianteId,
-      estado: data.estado,
-      usuarioId: data.usuarioId,
-      dispositivoId: data.dispositivoId,
-    },
   });
 }
 
@@ -118,23 +127,28 @@ export async function resolverSolicitud(
   aprobar: boolean,
   usuarioAutorizaId: string,
 ) {
-  const solicitud = await prisma.solicitudModificacion.findUnique({ where: { id: solicitudId } });
-  if (!solicitud) {
-    throw new HttpError(404, "Solicitud de modificación no encontrada");
-  }
-  if (solicitud.estado !== "PENDIENTE") {
-    throw new HttpError(409, "Esta solicitud ya fue resuelta");
-  }
-
   return prisma.$transaction(async (tx) => {
-    const actualizada = await tx.solicitudModificacion.update({
-      where: { id: solicitudId },
+    const solicitud = await tx.solicitudModificacion.findUnique({ where: { id: solicitudId } });
+    if (!solicitud) {
+      throw new HttpError(404, "Solicitud de modificación no encontrada");
+    }
+
+    // updateMany con `estado: PENDIENTE` en el where hace la lectura y la
+    // escritura atómicas: si dos resoluciones concurrentes llegan aquí,
+    // Postgres serializa las dos escrituras sobre la misma fila y la
+    // segunda ve el estado ya cambiado por la primera, así que su WHERE
+    // no matchea ninguna fila (count=0) en vez de sobrescribir el resultado.
+    const resultado = await tx.solicitudModificacion.updateMany({
+      where: { id: solicitudId, estado: "PENDIENTE" },
       data: {
         estado: aprobar ? "APROBADA" : "RECHAZADA",
         usuarioAutorizaId,
         fechaResolucion: new Date(),
       },
     });
+    if (resultado.count === 0) {
+      throw new HttpError(409, "Esta solicitud ya fue resuelta");
+    }
 
     if (aprobar) {
       await tx.asistencia.update({
@@ -143,7 +157,7 @@ export async function resolverSolicitud(
       });
     }
 
-    return actualizada;
+    return tx.solicitudModificacion.findUniqueOrThrow({ where: { id: solicitudId } });
   });
 }
 

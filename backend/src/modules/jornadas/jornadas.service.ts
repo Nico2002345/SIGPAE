@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import type { EstadoJornada } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/errorHandler.js";
@@ -65,15 +66,21 @@ export async function iniciarEntrega(id: string) {
 }
 
 export async function cerrarJornada(id: string, usuarioId: string) {
-  const actual = await obtenerJornadaOFallar(id);
-  if (!TRANSICIONES[actual.estado].includes("CERRADA")) {
-    throw new HttpError(409, `No se puede pasar la jornada de ${actual.estado} a CERRADA`);
-  }
-
   // Regla 7 del spec: al cerrar la jornada, la asistencia queda bloqueada
   // para modificación directa; cualquier cambio posterior exige el flujo
   // de solicitud/autorización del módulo de asistencia.
+  //
+  // bloquearJornada toma un lock FOR UPDATE sobre la fila de la jornada
+  // ANTES de decidir nada: cualquier registrarAsistencia/registrarEntrega
+  // concurrente para esta misma jornada (que también empieza con el mismo
+  // lock) queda serializado detrás de esta transacción, así que no puede
+  // colarse una asistencia/entrega nueva justo en el instante del cierre.
   return prisma.$transaction(async (tx) => {
+    const actual = await bloquearJornada(tx, id);
+    if (!TRANSICIONES[actual.estado].includes("CERRADA")) {
+      throw new HttpError(409, `No se puede pasar la jornada de ${actual.estado} a CERRADA`);
+    }
+
     const jornada = await tx.jornadaPae.update({
       where: { id },
       data: { estado: "CERRADA", usuarioCierreId: usuarioId, horaCierre: new Date() },
@@ -114,8 +121,35 @@ export async function obtenerJornadaOFallar(id: string) {
   return jornada;
 }
 
-export async function verificarJornadaAbierta(id: string) {
-  const jornada = await obtenerJornadaOFallar(id);
+interface JornadaBloqueada {
+  id: string;
+  sedeId: number;
+  estado: EstadoJornada;
+}
+
+/**
+ * Lee la jornada con `SELECT ... FOR UPDATE` dentro de la transacción `tx`.
+ * Cualquier otra transacción que también llame a esta función para la misma
+ * jornada queda bloqueada hasta que `tx` termine (commit o rollback), lo que
+ * serializa asistencia/entregas/cierre por jornada y elimina las carreras
+ * entre "leer el estado abierto" y "escribir asumiendo que sigue abierto".
+ */
+export async function bloquearJornada(tx: Prisma.TransactionClient, id: string): Promise<JornadaBloqueada> {
+  const filas = await tx.$queryRaw<JornadaBloqueada[]>`
+    SELECT id, sede_id AS "sedeId", estado FROM jornadas_pae WHERE id = ${id} FOR UPDATE
+  `;
+  const jornada = filas[0];
+  if (!jornada) {
+    throw new HttpError(404, "Jornada PAE no encontrada");
+  }
+  return jornada;
+}
+
+export async function bloquearYVerificarJornadaAbierta(
+  tx: Prisma.TransactionClient,
+  id: string,
+): Promise<JornadaBloqueada> {
+  const jornada = await bloquearJornada(tx, id);
   if (jornada.estado !== "ABIERTA" && jornada.estado !== "EN_ENTREGA") {
     throw new HttpError(409, "La jornada no está abierta; no se pueden registrar cambios");
   }

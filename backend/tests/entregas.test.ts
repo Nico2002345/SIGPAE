@@ -196,6 +196,58 @@ describe("Entregas y redistribución", () => {
     expect(redistribucion.body.entrega.entregaOriginalId).not.toBeNull();
   });
 
+  it("no permite una segunda redistribución para el mismo estudiante en la misma jornada", async () => {
+    const segundaRedistribucion = await request(app)
+      .post("/entregas")
+      .set("Authorization", `Bearer ${tokenOperador}`)
+      .send({ token: qrAsistioToken, jornadaId, tipo: "REDISTRIBUCION" });
+
+    expect(segundaRedistribucion.status).toBe(201);
+    expect(segundaRedistribucion.body.entrega.resultado).toBe("RECHAZADA");
+    expect(segundaRedistribucion.body.entrega.motivoRechazo).toMatch(/redistribución en esta jornada/);
+  });
+
+  it("dos escaneos NORMAL simultáneos del mismo estudiante solo autorizan uno (evita doble ración por carrera)", async () => {
+    const estudianteCarrera = await prisma.estudiante.create({
+      data: {
+        idPae: `PAE-2026-${String(sufijo).slice(-4)}77`,
+        tipoIdentificador: "PAE",
+        nombres: "Carrera",
+        apellidos: "Test",
+        sedeId,
+        institucionId,
+        origen: "SIMAT",
+      },
+    });
+    await request(app)
+      .post("/asistencia")
+      .set("Authorization", `Bearer ${tokenMaestro}`)
+      .send({ jornadaId, estudianteId: estudianteCarrera.id, estado: "ASISTIO" });
+    const qrCarrera = await request(app)
+      .post(`/qr/estudiantes/${estudianteCarrera.id}`)
+      .set("Authorization", `Bearer ${tokenMaestro}`);
+
+    const [primero, segundo] = await Promise.all([
+      request(app)
+        .post("/entregas")
+        .set("Authorization", `Bearer ${tokenOperador}`)
+        .send({ token: qrCarrera.body.qr.token, jornadaId }),
+      request(app)
+        .post("/entregas")
+        .set("Authorization", `Bearer ${tokenOperador}`)
+        .send({ token: qrCarrera.body.qr.token, jornadaId }),
+    ]);
+
+    const resultados = [primero.body.entrega.resultado, segundo.body.entrega.resultado];
+    expect(resultados.filter((r) => r === "AUTORIZADA")).toHaveLength(1);
+    expect(resultados.filter((r) => r === "RECHAZADA")).toHaveLength(1);
+
+    await prisma.entrega.deleteMany({ where: { estudianteId: estudianteCarrera.id } });
+    await prisma.asistencia.deleteMany({ where: { estudianteId: estudianteCarrera.id } });
+    await prisma.qrCode.deleteMany({ where: { estudianteId: estudianteCarrera.id } });
+    await prisma.estudiante.delete({ where: { id: estudianteCarrera.id } });
+  });
+
   it("calcula el resumen de la jornada (beneficiarios, normales, redistribuciones)", async () => {
     const res = await request(app)
       .get(`/entregas/jornada/${jornadaId}/resumen`)

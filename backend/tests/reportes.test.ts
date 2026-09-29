@@ -202,6 +202,49 @@ describe("Reportes", () => {
     expect(res.body.consolidado_por_zona[0].totalRacionesEntregadas).toBe(1);
   });
 
+  it("consolida por periodo usando el día local de Colombia, no el día UTC", async () => {
+    const estudianteZona = await prisma.estudiante.create({
+      data: {
+        idPae: `PAE-2026-${String(sufijo).slice(-5)}9`,
+        tipoIdentificador: "PAE",
+        nombres: "Zona",
+        apellidos: "Horaria",
+        sedeId,
+        institucionId,
+        origen: "SIMAT",
+      },
+    });
+
+    // 2026-11-01 02:30 UTC equivale a 2026-10-31 21:30 hora Colombia
+    // (UTC-5): debe contarse en el día 2026-10-31, no en 2026-11-01.
+    const entregaTardia = await prisma.entrega.create({
+      data: {
+        estudianteId: estudianteZona.id,
+        jornadaId,
+        tipo: "NORMAL",
+        resultado: "AUTORIZADA",
+        usuarioId: usuarioMaestroId,
+        sedeId,
+        institucionId,
+        fechaHora: new Date("2026-11-01T02:30:00.000Z"),
+      },
+    });
+
+    const res = await request(app)
+      .get(`/reportes/consolidado/periodo?sedeId=${sedeId}&fechaInicio=2026-10-31&fechaFin=2026-11-02`)
+      .set("Authorization", `Bearer ${tokenMaestro}`);
+
+    expect(res.status).toBe(200);
+    const bucketCorrecto = res.body.consolidado_por_periodo.find((f: { fecha: string }) => f.fecha === "2026-10-31");
+    expect(bucketCorrecto).toBeDefined();
+    expect(
+      res.body.consolidado_por_periodo.some((f: { fecha: string }) => f.fecha === "2026-11-01"),
+    ).toBe(false);
+
+    await prisma.entrega.delete({ where: { id: entregaTardia.id } });
+    await prisma.estudiante.delete({ where: { id: estudianteZona.id } });
+  });
+
   it("exporta el reporte de asistencia diaria como archivo Excel", async () => {
     const res = await request(app)
       .get(`/reportes/asistencia-diaria?jornadaId=${jornadaId}&formato=excel`)
