@@ -30,12 +30,16 @@ model ZonaEducativa {
 }
 
 model Institucion {
-  id          Int                  @id @default(autoincrement())
-  nombre      String
-  codigoDane  String               @unique @map("codigo_dane")
-  zonaId      Int                  @map("zona_id")
-  zona        ZonaEducativa        @relation(fields: [zonaId], references: [id])
-  estado      EstadoActivoInactivo @default(ACTIVO)
+  id             Int                  @id @default(autoincrement())
+  nombre         String
+  codigoDane     String               @unique @map("codigo_dane")
+  zonaId         Int                  @map("zona_id")
+  zona           ZonaEducativa        @relation(fields: [zonaId], references: [id])
+  estado         EstadoActivoInactivo @default(ACTIVO)
+  // Regla 24 del spec: los datos de capacitación nunca deben mezclarse con
+  // los reales. Toda institución/sede/estudiante/jornada ficticia queda
+  // marcada aquí, y los listados/reportes la excluyen por defecto.
+  esCapacitacion Boolean              @default(false) @map("es_capacitacion")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -56,6 +60,7 @@ model Sede {
   nombre         String
   codigoDaneSede String               @unique @map("codigo_dane_sede")
   estado         EstadoActivoInactivo @default(ACTIVO)
+  esCapacitacion Boolean              @default(false) @map("es_capacitacion")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -155,8 +160,9 @@ model Estudiante {
   grupoId       Int?   @map("grupo_id")
   grupo         Grupo? @relation(fields: [grupoId], references: [id])
 
-  estado EstadoEstudiante @default(ACTIVO)
-  origen OrigenEstudiante
+  estado         EstadoEstudiante @default(ACTIVO)
+  origen         OrigenEstudiante
+  esCapacitacion Boolean          @default(false) @map("es_capacitacion")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -393,6 +399,7 @@ model Usuario {
   novedadesRegistradas   Novedad[]
   sincronizaciones       Sincronizacion[]
   auditorias             Auditoria[]
+  evaluacionesCapacitacion EvaluacionCapacitacion[]
 
   @@map("usuarios")
 }
@@ -532,10 +539,11 @@ enum EstadoJornada {
 model JornadaPae {
   // uuid: la abre un operador en campo, posiblemente sin conexión.
   id     String        @id @default(uuid())
-  sedeId Int           @map("sede_id")
-  sede   Sede          @relation(fields: [sedeId], references: [id])
-  fecha  DateTime      @db.Date
-  estado EstadoJornada @default(NO_INICIADA)
+  sedeId         Int           @map("sede_id")
+  sede           Sede          @relation(fields: [sedeId], references: [id])
+  fecha          DateTime      @db.Date
+  estado         EstadoJornada @default(NO_INICIADA)
+  esCapacitacion Boolean       @default(false) @map("es_capacitacion")
 
   usuarioAperturaId String?   @map("usuario_apertura_id")
   usuarioApertura   Usuario?  @relation("JornadaUsuarioApertura", fields: [usuarioAperturaId], references: [id])
@@ -744,4 +752,50 @@ model Auditoria {
 
   @@index([entidad, entidadId])
   @@map("auditoria")
+}
+
+// =========================================================================
+// CAPACITACIÓN
+// =========================================================================
+
+enum EstadoEscenarioCapacitacion {
+  ACTIVO
+  INACTIVO
+}
+
+// Catálogo de escenarios practicables (regla 24 del spec): entrega normal,
+// inasistencia, redistribución, sede incorrecta, traslado, estudiante
+// provisional, sin Internet, sincronización Bluetooth, cierre de jornada.
+// No ejecuta nada por sí mismo: describe qué debe practicar el usuario
+// contra el entorno ficticio generado por CapacitacionService.
+model EscenarioCapacitacion {
+  id          Int                         @id @default(autoincrement())
+  codigo      String                      @unique
+  nombre      String
+  descripcion String?
+  estado      EstadoEscenarioCapacitacion @default(ACTIVO)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  evaluaciones EvaluacionCapacitacion[]
+
+  @@map("escenarios_capacitacion")
+}
+
+enum ResultadoEvaluacion {
+  APROBADO
+  REPROBADO
+}
+
+model EvaluacionCapacitacion {
+  id            String               @id @default(uuid())
+  escenarioId   Int                  @map("escenario_id")
+  escenario     EscenarioCapacitacion @relation(fields: [escenarioId], references: [id])
+  usuarioId     String               @map("usuario_id")
+  usuario       Usuario              @relation(fields: [usuarioId], references: [id])
+  resultado     ResultadoEvaluacion
+  observaciones String?
+  fecha         DateTime             @default(now())
+
+  @@map("evaluaciones_capacitacion")
 }

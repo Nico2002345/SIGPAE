@@ -3,7 +3,12 @@ import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/errorHandler.js";
 import { obtenerZonaOFallar } from "./zonas.service.js";
 
-export async function crearInstitucion(data: { nombre: string; codigoDane: string; zonaId: number }) {
+export async function crearInstitucion(data: {
+  nombre: string;
+  codigoDane: string;
+  zonaId: number;
+  esCapacitacion?: boolean;
+}) {
   await obtenerZonaOFallar(data.zonaId);
 
   const existente = await prisma.institucion.findUnique({ where: { codigoDane: data.codigoDane } });
@@ -14,9 +19,17 @@ export async function crearInstitucion(data: { nombre: string; codigoDane: strin
   return prisma.institucion.create({ data });
 }
 
-export async function listarInstituciones(filtros: { zonaId?: number; estado?: EstadoActivoInactivo }) {
+export async function listarInstituciones(filtros: {
+  zonaId?: number;
+  estado?: EstadoActivoInactivo;
+  esCapacitacion?: boolean;
+}) {
   return prisma.institucion.findMany({
-    where: { zonaId: filtros.zonaId, estado: filtros.estado },
+    where: {
+      zonaId: filtros.zonaId,
+      estado: filtros.estado,
+      esCapacitacion: filtros.esCapacitacion ?? false,
+    },
     include: { zona: { select: { id: true, nombre: true } } },
     orderBy: { nombre: "asc" },
   });

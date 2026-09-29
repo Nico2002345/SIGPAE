@@ -76,6 +76,7 @@ const provisionalesQuerySchema = z
     sedeId: z.coerce.number().int().positive().optional(),
     institucionId: z.coerce.number().int().positive().optional(),
     estado: z.enum(["ACTIVO", "RETIRADO", "TRASLADADO", "PROVISIONAL_PENDIENTE", "VINCULADO"]).optional(),
+    esCapacitacion: z.coerce.boolean().optional(),
   })
   .merge(formatoSchema);
 
@@ -92,6 +93,7 @@ const trasladosQuerySchema = z
   .object({
     estado: z.enum(["PENDIENTE", "CONFIRMADO"]).optional(),
     institucionId: z.coerce.number().int().positive().optional(),
+    esCapacitacion: z.coerce.boolean().optional(),
   })
   .merge(formatoSchema);
 
@@ -109,6 +111,7 @@ const novedadesQuerySchema = z
     sedeId: z.coerce.number().int().positive().optional(),
     tipo: z.enum(["RETIRO", "TRASLADO_REPORTADO", "OTRO"]).optional(),
     estado: z.enum(["ABIERTA", "CERRADA"]).optional(),
+    esCapacitacion: z.coerce.boolean().optional(),
   })
   .merge(formatoSchema);
 
@@ -128,6 +131,7 @@ const consolidadoQuerySchema = z
     sedeId: z.coerce.number().int().positive().optional(),
     institucionId: z.coerce.number().int().positive().optional(),
     zonaId: z.coerce.number().int().positive().optional(),
+    esCapacitacion: z.coerce.boolean().optional(),
   })
   .merge(formatoSchema);
 

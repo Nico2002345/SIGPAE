@@ -2,13 +2,14 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { hash } from "@node-rs/argon2";
-import { seedRolesYPermisos } from "./seedData.js";
+import { seedEscenariosCapacitacion, seedRolesYPermisos } from "./seedData.js";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
   const { maestro } = await seedRolesYPermisos(prisma);
+  await seedEscenariosCapacitacion(prisma);
 
   const usuarioLoginBootstrap = "maestro";
   const existente = await prisma.usuario.findUnique({ where: { usuarioLogin: usuarioLoginBootstrap } });

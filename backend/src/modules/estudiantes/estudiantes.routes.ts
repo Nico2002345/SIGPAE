@@ -66,6 +66,7 @@ const listarEstudiantesSchema = z.object({
   grupoId: z.coerce.number().int().positive().optional(),
   estado: estadoEstudianteSchema.optional(),
   busqueda: z.string().min(1).optional(),
+  esCapacitacion: z.coerce.boolean().optional(),
 });
 
 estudiantesRouter.get(

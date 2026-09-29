@@ -49,6 +49,7 @@ const listarJornadasSchema = z.object({
   sedeId: z.coerce.number().int().positive().optional(),
   fecha: z.coerce.date().optional(),
   estado: z.enum(["NO_INICIADA", "ABIERTA", "EN_ENTREGA", "CERRADA", "SINCRONIZANDO", "SINCRONIZADA"]).optional(),
+  esCapacitacion: z.coerce.boolean().optional(),
 });
 
 jornadasRouter.get(

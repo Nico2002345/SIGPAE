@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { asistenciaRouter } from "./modules/asistencia/asistencia.routes.js";
 import { auditoriaRouter } from "./modules/auditoria/auditoria.routes.js";
+import { capacitacionRouter } from "./modules/capacitacion/capacitacion.routes.js";
 import { entregasRouter } from "./modules/entregas/entregas.routes.js";
 import { estudiantesRouter } from "./modules/estudiantes/estudiantes.routes.js";
 import { gradosRouter } from "./modules/estructura/grados.routes.js";
@@ -42,6 +43,7 @@ export function createApp(): Express {
   app.use("/entregas", entregasRouter);
   app.use("/reportes", reportesRouter);
   app.use("/auditoria", auditoriaRouter);
+  app.use("/capacitacion", capacitacionRouter);
 
   app.use(errorHandler);
 

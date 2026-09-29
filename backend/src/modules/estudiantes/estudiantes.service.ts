@@ -20,6 +20,7 @@ const resumenSelect = {
   apellidos: true,
   estado: true,
   origen: true,
+  esCapacitacion: true,
   sede: { select: { id: true, nombre: true } },
   institucion: { select: { id: true, nombre: true } },
   grado: { select: { id: true, nombre: true } },
@@ -68,6 +69,7 @@ export async function crearEstudianteOficial(data: {
   institucionId: number;
   gradoId?: number;
   grupoId?: number;
+  esCapacitacion?: boolean;
 }) {
   await validarUbicacion(data);
 
@@ -97,13 +99,17 @@ export async function crearEstudianteProvisional(data: {
   institucionId: number;
   gradoId?: number;
   grupoId?: number;
+  esCapacitacion?: boolean;
 }) {
   await validarUbicacion(data);
 
   const anio = new Date().getFullYear();
   for (let intento = 0; intento < 5; intento++) {
+    // Se cuenta solo dentro del mismo espacio (real o capacitación) para
+    // que practicar el flujo de provisionales no le "robe" números a la
+    // secuencia real, ni al revés.
     const total = await prisma.estudiante.count({
-      where: { idPae: { startsWith: `TEMP-${anio}-` } },
+      where: { idPae: { startsWith: `TEMP-${anio}-` }, esCapacitacion: data.esCapacitacion ?? false },
     });
     const idPae = `TEMP-${anio}-${String(total + 1).padStart(6, "0")}`;
 
@@ -130,6 +136,7 @@ export async function listarEstudiantes(filtros: {
   grupoId?: number;
   estado?: EstadoEstudiante;
   busqueda?: string;
+  esCapacitacion?: boolean;
 }) {
   return prisma.estudiante.findMany({
     where: {
@@ -138,6 +145,7 @@ export async function listarEstudiantes(filtros: {
       gradoId: filtros.gradoId,
       grupoId: filtros.grupoId,
       estado: filtros.estado,
+      esCapacitacion: filtros.esCapacitacion ?? false,
       OR: filtros.busqueda
         ? [
             { nombres: { contains: filtros.busqueda, mode: "insensitive" } },

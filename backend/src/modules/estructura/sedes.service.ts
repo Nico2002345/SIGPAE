@@ -3,7 +3,12 @@ import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/errorHandler.js";
 import { obtenerInstitucionOFallar } from "./instituciones.service.js";
 
-export async function crearSede(data: { nombre: string; codigoDaneSede: string; institucionId: number }) {
+export async function crearSede(data: {
+  nombre: string;
+  codigoDaneSede: string;
+  institucionId: number;
+  esCapacitacion?: boolean;
+}) {
   await obtenerInstitucionOFallar(data.institucionId);
 
   const existente = await prisma.sede.findUnique({ where: { codigoDaneSede: data.codigoDaneSede } });
@@ -14,9 +19,18 @@ export async function crearSede(data: { nombre: string; codigoDaneSede: string; 
   return prisma.sede.create({ data });
 }
 
-export async function listarSedes(filtros: { institucionId?: number; estado?: EstadoActivoInactivo }) {
+export async function listarSedes(filtros: {
+  institucionId?: number;
+  estado?: EstadoActivoInactivo;
+  esCapacitacion?: boolean;
+}) {
   return prisma.sede.findMany({
-    where: { institucionId: filtros.institucionId, estado: filtros.estado },
+    where: {
+      institucionId: filtros.institucionId,
+      estado: filtros.estado,
+      // Por defecto solo datos reales (regla 24): nunca mezclar con capacitación.
+      esCapacitacion: filtros.esCapacitacion ?? false,
+    },
     include: { institucion: { select: { id: true, nombre: true, zonaId: true } } },
     orderBy: { nombre: "asc" },
   });

@@ -92,6 +92,29 @@ export const PERMISOS = [
   { codigo: "reportes.ver", modulo: "reportes", descripcion: "Consultar y exportar reportes del programa" },
 
   { codigo: "auditoria.ver", modulo: "auditoria", descripcion: "Consultar el registro de auditoría del sistema" },
+
+  {
+    codigo: "capacitacion.gestionar",
+    modulo: "capacitacion",
+    descripcion: "Generar o purgar entornos de práctica y administrar el catálogo de escenarios",
+  },
+  { codigo: "capacitacion.ver", modulo: "capacitacion", descripcion: "Consultar escenarios y evaluaciones de capacitación" },
+  { codigo: "capacitacion.evaluar", modulo: "capacitacion", descripcion: "Registrar la evaluación de una capacitación" },
+];
+
+// Catálogo inicial de escenarios practicables (regla 24 del spec, ejemplo
+// "CAPACITACIÓN 001"). El Maestro puede agregar más desde la API; estos son
+// solo el punto de partida.
+export const ESCENARIOS_CAPACITACION = [
+  { codigo: "CAP-001-ENTREGA-NORMAL", nombre: "Entrega normal" },
+  { codigo: "CAP-001-INASISTENCIA", nombre: "Inasistencia" },
+  { codigo: "CAP-001-REDISTRIBUCION", nombre: "Redistribución" },
+  { codigo: "CAP-001-SEDE-INCORRECTA", nombre: "Sede incorrecta" },
+  { codigo: "CAP-001-TRASLADO", nombre: "Traslado" },
+  { codigo: "CAP-001-PROVISIONAL", nombre: "Estudiante provisional" },
+  { codigo: "CAP-001-CIERRE-JORNADA", nombre: "Cierre de jornada" },
+  { codigo: "CAP-001-SIN-INTERNET", nombre: "Sin Internet" },
+  { codigo: "CAP-001-SYNC-BLUETOOTH", nombre: "Sincronización Bluetooth" },
 ];
 
 // Permisos otorgados a roles distintos de MAESTRO (que siempre recibe todos).
@@ -145,6 +168,16 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
   ],
   VEEDOR_PAE: ["estudiantes.ver", "jornadas.ver", "asistencia.ver", "entregas.ver", "reportes.ver", "auditoria.ver"],
 };
+
+export async function seedEscenariosCapacitacion(prisma: PrismaClient): Promise<void> {
+  for (const escenario of ESCENARIOS_CAPACITACION) {
+    await prisma.escenarioCapacitacion.upsert({
+      where: { codigo: escenario.codigo },
+      update: {},
+      create: escenario,
+    });
+  }
+}
 
 export async function seedRolesYPermisos(prisma: PrismaClient): Promise<{ maestro: Rol }> {
   for (const rol of ROLES) {

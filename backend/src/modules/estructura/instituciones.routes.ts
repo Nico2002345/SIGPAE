@@ -29,6 +29,7 @@ institucionesRouter.post(
 const listarInstitucionesSchema = z.object({
   zonaId: z.coerce.number().int().positive().optional(),
   estado: z.enum(["ACTIVO", "INACTIVO"]).optional(),
+  esCapacitacion: z.coerce.boolean().optional(),
 });
 
 institucionesRouter.get(

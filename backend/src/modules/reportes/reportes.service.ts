@@ -78,6 +78,7 @@ export async function reporteEstudiantesProvisionales(filtros: {
   sedeId?: number;
   institucionId?: number;
   estado?: EstadoEstudiante;
+  esCapacitacion?: boolean;
 }) {
   return prisma.estudiante.findMany({
     where: {
@@ -85,6 +86,7 @@ export async function reporteEstudiantesProvisionales(filtros: {
       sedeId: filtros.sedeId,
       institucionId: filtros.institucionId,
       estado: filtros.estado,
+      esCapacitacion: filtros.esCapacitacion ?? false,
     },
     select: {
       idPae: true,
@@ -99,11 +101,16 @@ export async function reporteEstudiantesProvisionales(filtros: {
   });
 }
 
-export async function reporteTraslados(filtros: { estado?: EstadoTraslado; institucionId?: number }) {
+export async function reporteTraslados(filtros: {
+  estado?: EstadoTraslado;
+  institucionId?: number;
+  esCapacitacion?: boolean;
+}) {
   return prisma.traslado.findMany({
     where: {
       estado: filtros.estado,
       institucionNuevaId: filtros.institucionId,
+      institucionNueva: { esCapacitacion: filtros.esCapacitacion ?? false },
     },
     select: {
       fechaDeteccion: true,
@@ -118,9 +125,19 @@ export async function reporteTraslados(filtros: { estado?: EstadoTraslado; insti
   });
 }
 
-export async function reporteNovedades(filtros: { sedeId?: number; tipo?: TipoNovedad; estado?: EstadoNovedad }) {
+export async function reporteNovedades(filtros: {
+  sedeId?: number;
+  tipo?: TipoNovedad;
+  estado?: EstadoNovedad;
+  esCapacitacion?: boolean;
+}) {
   return prisma.novedad.findMany({
-    where: { sedeId: filtros.sedeId, tipo: filtros.tipo, estado: filtros.estado },
+    where: {
+      sedeId: filtros.sedeId,
+      tipo: filtros.tipo,
+      estado: filtros.estado,
+      sede: { esCapacitacion: filtros.esCapacitacion ?? false },
+    },
     select: {
       fecha: true,
       tipo: true,
@@ -139,6 +156,7 @@ interface FiltrosConsolidado {
   sedeId?: number;
   institucionId?: number;
   zonaId?: number;
+  esCapacitacion?: boolean;
 }
 
 interface EntregaParaConsolidado {
@@ -157,6 +175,7 @@ async function obtenerEntregasAutorizadas(filtros: FiltrosConsolidado): Promise<
       resultado: "AUTORIZADA",
       sedeId: filtros.sedeId,
       institucionId: filtros.institucionId,
+      sede: { esCapacitacion: filtros.esCapacitacion ?? false },
       institucion: filtros.zonaId ? { zonaId: filtros.zonaId } : undefined,
       fechaHora:
         filtros.fechaInicio || filtros.fechaFin

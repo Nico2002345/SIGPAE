@@ -29,6 +29,7 @@ sedesRouter.post(
 const listarSedesSchema = z.object({
   institucionId: z.coerce.number().int().positive().optional(),
   estado: z.enum(["ACTIVO", "INACTIVO"]).optional(),
+  esCapacitacion: z.coerce.boolean().optional(),
 });
 
 sedesRouter.get(

@@ -32,7 +32,10 @@ async function transicionar(id: string, destino: EstadoJornada, cambios: Record<
 }
 
 export async function abrirJornada(sedeId: number, fecha: Date, usuarioId: string) {
-  await obtenerSedeOFallar(sedeId);
+  // esCapacitacion se deriva siempre de la sede, nunca se recibe como
+  // parámetro: así una jornada no puede quedar marcada real por error
+  // sobre una sede ficticia (o viceversa).
+  const sede = await obtenerSedeOFallar(sedeId);
   const fechaNormalizada = normalizarFecha(fecha);
 
   const existente = await prisma.jornadaPae.findUnique({
@@ -47,6 +50,7 @@ export async function abrirJornada(sedeId: number, fecha: Date, usuarioId: strin
         estado: "ABIERTA",
         usuarioAperturaId: usuarioId,
         horaApertura: new Date(),
+        esCapacitacion: sede.esCapacitacion,
       },
     });
   }
@@ -101,12 +105,18 @@ export async function marcarSincronizada(id: string) {
   return transicionar(id, "SINCRONIZADA");
 }
 
-export async function listarJornadas(filtros: { sedeId?: number; fecha?: Date; estado?: EstadoJornada }) {
+export async function listarJornadas(filtros: {
+  sedeId?: number;
+  fecha?: Date;
+  estado?: EstadoJornada;
+  esCapacitacion?: boolean;
+}) {
   return prisma.jornadaPae.findMany({
     where: {
       sedeId: filtros.sedeId,
       fecha: filtros.fecha ? normalizarFecha(filtros.fecha) : undefined,
       estado: filtros.estado,
+      esCapacitacion: filtros.esCapacitacion ?? false,
     },
     include: { sede: { select: { id: true, nombre: true } } },
     orderBy: { fecha: "desc" },
