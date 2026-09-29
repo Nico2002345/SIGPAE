@@ -21,7 +21,7 @@ usuariosRouter.post(
   authorize("usuarios.crear"),
   asyncHandler(async (req, res) => {
     const body = crearUsuarioSchema.parse(req.body);
-    const usuario = await usuariosService.crearUsuario(body);
+    const usuario = await usuariosService.crearUsuario(body, { usuarioId: req.usuario!.id, ip: req.ip });
     res.status(201).json({ usuario });
   }),
 );
@@ -45,7 +45,10 @@ usuariosRouter.patch(
   authorize("usuarios.editar"),
   asyncHandler(async (req, res) => {
     const body = editarUsuarioSchema.parse(req.body);
-    const usuario = await usuariosService.editarUsuario(req.params.id, body);
+    const usuario = await usuariosService.editarUsuario(req.params.id, body, {
+      usuarioId: req.usuario!.id,
+      ip: req.ip,
+    });
     res.json({ usuario });
   }),
 );
@@ -59,7 +62,10 @@ usuariosRouter.patch(
   authorize("usuarios.desactivar"),
   asyncHandler(async (req, res) => {
     const body = estadoSchema.parse(req.body);
-    const usuario = await usuariosService.cambiarEstadoUsuario(req.params.id, body.estado);
+    const usuario = await usuariosService.cambiarEstadoUsuario(req.params.id, body.estado, {
+      usuarioId: req.usuario!.id,
+      ip: req.ip,
+    });
     res.json({ usuario });
   }),
 );
@@ -78,6 +84,7 @@ usuariosRouter.put(
       req.params.id,
       body.permisoId,
       body.tipo,
+      { usuarioId: req.usuario!.id, ip: req.ip },
     );
     res.json({ permisoExtra });
   }),

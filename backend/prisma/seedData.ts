@@ -90,6 +90,8 @@ export const PERMISOS = [
   { codigo: "entregas.ver", modulo: "entregas", descripcion: "Consultar entregas y su resumen por jornada" },
 
   { codigo: "reportes.ver", modulo: "reportes", descripcion: "Consultar y exportar reportes del programa" },
+
+  { codigo: "auditoria.ver", modulo: "auditoria", descripcion: "Consultar el registro de auditoría del sistema" },
 ];
 
 // Permisos otorgados a roles distintos de MAESTRO (que siempre recibe todos).
@@ -133,8 +135,15 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
   ],
   // Rol de solo lectura/supervisión (regla 13): sin permisos operativos de
   // registro, únicamente consulta y reportes.
-  SUPERVISION_PAE: ["estudiantes.ver", "jornadas.ver", "asistencia.ver", "entregas.ver", "reportes.ver"],
-  VEEDOR_PAE: ["estudiantes.ver", "jornadas.ver", "asistencia.ver", "entregas.ver", "reportes.ver"],
+  SUPERVISION_PAE: [
+    "estudiantes.ver",
+    "jornadas.ver",
+    "asistencia.ver",
+    "entregas.ver",
+    "reportes.ver",
+    "auditoria.ver",
+  ],
+  VEEDOR_PAE: ["estudiantes.ver", "jornadas.ver", "asistencia.ver", "entregas.ver", "reportes.ver", "auditoria.ver"],
 };
 
 export async function seedRolesYPermisos(prisma: PrismaClient): Promise<{ maestro: Rol }> {

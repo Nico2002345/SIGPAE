@@ -15,7 +15,7 @@ qrRouter.post(
   authorize("qr.generar"),
   asyncHandler(async (req, res) => {
     const { estudianteId } = estudianteIdParamSchema.parse(req.params);
-    const qr = await qrService.generarQr(estudianteId);
+    const qr = await qrService.generarQr(estudianteId, { usuarioId: req.usuario!.id, ip: req.ip });
     res.status(201).json({ qr });
   }),
 );
@@ -25,7 +25,7 @@ qrRouter.post(
   authorize("qr.generar"),
   asyncHandler(async (req, res) => {
     const { estudianteId } = estudianteIdParamSchema.parse(req.params);
-    const qr = await qrService.reemitirQr(estudianteId);
+    const qr = await qrService.reemitirQr(estudianteId, { usuarioId: req.usuario!.id, ip: req.ip });
     res.json({ qr });
   }),
 );
@@ -35,7 +35,7 @@ qrRouter.post(
   authorize("qr.generar"),
   asyncHandler(async (req, res) => {
     const { estudianteId } = estudianteIdParamSchema.parse(req.params);
-    const qr = await qrService.revocarQr(estudianteId);
+    const qr = await qrService.revocarQr(estudianteId, { usuarioId: req.usuario!.id, ip: req.ip });
     res.json({ qr });
   }),
 );

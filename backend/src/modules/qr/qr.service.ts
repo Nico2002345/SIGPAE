@@ -3,6 +3,8 @@ import { Prisma } from "@prisma/client";
 import QRCode from "qrcode";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/errorHandler.js";
+import type { ContextoActor } from "../auditoria/auditoria.service.js";
+import { registrarAuditoria } from "../auditoria/auditoria.service.js";
 import { ESTADOS_ESTUDIANTE_HABILITADOS, obtenerEstudianteOFallar } from "../estudiantes/estudiantes.service.js";
 
 function generarToken(): string {
@@ -21,7 +23,7 @@ function verificarEstudianteHabilitado(estudiante: { estado: string }) {
   }
 }
 
-export async function generarQr(estudianteId: string) {
+export async function generarQr(estudianteId: string, actor: ContextoActor) {
   const estudiante = await obtenerEstudianteOFallar(estudianteId);
   verificarEstudianteHabilitado(estudiante);
 
@@ -32,9 +34,19 @@ export async function generarQr(estudianteId: string) {
 
   for (let intento = 0; intento < 5; intento++) {
     try {
-      return await prisma.qrCode.create({
+      const qr = await prisma.qrCode.create({
         data: { estudianteId, token: generarToken() },
       });
+      // El token NUNCA se registra en la auditoría: es el secreto que
+      // protege contra falsificación de carnets, igual que una contraseña.
+      await registrarAuditoria({
+        accion: "qr.generar",
+        entidad: "QrCode",
+        entidadId: String(qr.id),
+        valorNuevo: { estudianteId, versionCarnet: qr.versionCarnet },
+        actor,
+      });
+      return qr;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         continue;
@@ -46,7 +58,7 @@ export async function generarQr(estudianteId: string) {
   throw new HttpError(409, "No se pudo generar un token de QR único, intente de nuevo");
 }
 
-export async function reemitirQr(estudianteId: string) {
+export async function reemitirQr(estudianteId: string, actor: ContextoActor) {
   const estudiante = await obtenerEstudianteOFallar(estudianteId);
   verificarEstudianteHabilitado(estudiante);
 
@@ -57,10 +69,19 @@ export async function reemitirQr(estudianteId: string) {
 
   for (let intento = 0; intento < 5; intento++) {
     try {
-      return await prisma.qrCode.update({
+      const qr = await prisma.qrCode.update({
         where: { estudianteId },
         data: { token: generarToken(), estado: "ACTIVO", versionCarnet: { increment: 1 } },
       });
+      await registrarAuditoria({
+        accion: "qr.reemitir",
+        entidad: "QrCode",
+        entidadId: String(qr.id),
+        valorAnterior: { versionCarnet: actual.versionCarnet, estado: actual.estado },
+        valorNuevo: { versionCarnet: qr.versionCarnet, estado: qr.estado },
+        actor,
+      });
+      return qr;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
         continue;
@@ -72,7 +93,7 @@ export async function reemitirQr(estudianteId: string) {
   throw new HttpError(409, "No se pudo reemitir el QR, intente de nuevo");
 }
 
-export async function revocarQr(estudianteId: string) {
+export async function revocarQr(estudianteId: string, actor: ContextoActor) {
   const actual = await prisma.qrCode.findUnique({ where: { estudianteId } });
   if (!actual) {
     throw new HttpError(404, "El estudiante no tiene un QR generado todavía");
@@ -81,7 +102,18 @@ export async function revocarQr(estudianteId: string) {
     throw new HttpError(409, "El QR ya está revocado");
   }
 
-  return prisma.qrCode.update({ where: { estudianteId }, data: { estado: "REVOCADO" } });
+  const qr = await prisma.qrCode.update({ where: { estudianteId }, data: { estado: "REVOCADO" } });
+
+  await registrarAuditoria({
+    accion: "qr.revocar",
+    entidad: "QrCode",
+    entidadId: String(qr.id),
+    valorAnterior: { estado: actual.estado },
+    valorNuevo: { estado: qr.estado },
+    actor,
+  });
+
+  return qr;
 }
 
 export async function obtenerQrDeEstudiante(estudianteId: string) {
