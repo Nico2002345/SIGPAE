@@ -37,7 +37,43 @@ export const PERMISOS = [
   { codigo: "grupos.ver", modulo: "estructura", descripcion: "Consultar grupos" },
   { codigo: "grupos.crear", modulo: "estructura", descripcion: "Crear grupos" },
   { codigo: "grupos.editar", modulo: "estructura", descripcion: "Editar grupos" },
+
+  { codigo: "estudiantes.ver", modulo: "estudiantes", descripcion: "Consultar estudiantes" },
+  { codigo: "estudiantes.crear", modulo: "estudiantes", descripcion: "Crear estudiantes oficiales (origen SIMAT)" },
+  {
+    codigo: "estudiantes.crear_provisional",
+    modulo: "estudiantes",
+    descripcion: "Crear estudiantes provisionales (TEMP) aún no reportados en SIMAT",
+  },
+  {
+    codigo: "estudiantes.editar",
+    modulo: "estudiantes",
+    descripcion: "Editar cualquier estudiante, incluidos los de origen SIMAT",
+  },
+  {
+    codigo: "estudiantes.editar_provisional",
+    modulo: "estudiantes",
+    descripcion: "Editar únicamente estudiantes provisionales (no datos maestros de SIMAT)",
+  },
+  { codigo: "estudiantes.retirar", modulo: "estudiantes", descripcion: "Registrar el retiro de un estudiante" },
+  {
+    codigo: "estudiantes.vincular",
+    modulo: "estudiantes",
+    descripcion: "Vincular un estudiante provisional con su registro oficial de SIMAT",
+  },
 ];
+
+// Permisos otorgados a roles distintos de MAESTRO (que siempre recibe todos).
+// Reglas de negocio (ver docs de Fase 0): un docente puede consultar estudiantes,
+// crear/editar provisionales e informar retiros, pero no tocar datos maestros de SIMAT.
+const PERMISOS_POR_ROL: Record<string, string[]> = {
+  DOCENTE: [
+    "estudiantes.ver",
+    "estudiantes.crear_provisional",
+    "estudiantes.editar_provisional",
+    "estudiantes.retirar",
+  ],
+};
 
 export async function seedRolesYPermisos(prisma: PrismaClient): Promise<{ maestro: Rol }> {
   for (const rol of ROLES) {
@@ -57,6 +93,19 @@ export async function seedRolesYPermisos(prisma: PrismaClient): Promise<{ maestr
       update: {},
       create: { rolId: maestro.id, permisoId: permiso.id },
     });
+  }
+
+  for (const [nombreRol, codigosPermisos] of Object.entries(PERMISOS_POR_ROL)) {
+    const rol = await prisma.rol.findUniqueOrThrow({ where: { nombre: nombreRol } });
+    for (const codigo of codigosPermisos) {
+      const permiso = permisos.find((p) => p.codigo === codigo);
+      if (!permiso) continue;
+      await prisma.rolPermiso.upsert({
+        where: { rolId_permisoId: { rolId: rol.id, permisoId: permiso.id } },
+        update: {},
+        create: { rolId: rol.id, permisoId: permiso.id },
+      });
+    }
   }
 
   return { maestro };
