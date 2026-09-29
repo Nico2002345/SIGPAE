@@ -65,7 +65,25 @@ export async function iniciarEntrega(id: string) {
 }
 
 export async function cerrarJornada(id: string, usuarioId: string) {
-  return transicionar(id, "CERRADA", { usuarioCierreId: usuarioId, horaCierre: new Date() });
+  const actual = await obtenerJornadaOFallar(id);
+  if (!TRANSICIONES[actual.estado].includes("CERRADA")) {
+    throw new HttpError(409, `No se puede pasar la jornada de ${actual.estado} a CERRADA`);
+  }
+
+  // Regla 7 del spec: al cerrar la jornada, la asistencia queda bloqueada
+  // para modificación directa; cualquier cambio posterior exige el flujo
+  // de solicitud/autorización del módulo de asistencia.
+  return prisma.$transaction(async (tx) => {
+    const jornada = await tx.jornadaPae.update({
+      where: { id },
+      data: { estado: "CERRADA", usuarioCierreId: usuarioId, horaCierre: new Date() },
+    });
+    await tx.asistencia.updateMany({
+      where: { jornadaId: id, bloqueada: false },
+      data: { bloqueada: true },
+    });
+    return jornada;
+  });
 }
 
 export async function marcarSincronizando(id: string) {

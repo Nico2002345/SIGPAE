@@ -72,6 +72,19 @@ export const PERMISOS = [
     modulo: "jornadas",
     descripcion: "Abrir, iniciar entrega y cerrar una jornada PAE",
   },
+
+  { codigo: "asistencia.ver", modulo: "asistencia", descripcion: "Consultar registros de asistencia" },
+  { codigo: "asistencia.registrar", modulo: "asistencia", descripcion: "Registrar o corregir asistencia mientras la jornada está abierta" },
+  {
+    codigo: "asistencia.solicitar_modificacion",
+    modulo: "asistencia",
+    descripcion: "Solicitar modificar una asistencia ya bloqueada tras el cierre de la jornada",
+  },
+  {
+    codigo: "asistencia.autorizar_modificacion",
+    modulo: "asistencia",
+    descripcion: "Aprobar o rechazar solicitudes de modificación de asistencia",
+  },
 ];
 
 // Permisos otorgados a roles distintos de MAESTRO (que siempre recibe todos).
@@ -84,10 +97,13 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
     "estudiantes.editar_provisional",
     "estudiantes.retirar",
     "jornadas.ver",
+    "asistencia.ver",
+    "asistencia.registrar",
+    "asistencia.solicitar_modificacion",
   ],
-  OPERADOR: ["qr.escanear", "jornadas.ver", "jornadas.gestionar"],
-  MANIPULADORA: ["qr.escanear", "jornadas.ver", "jornadas.gestionar"],
-  COORDINADOR_LOGISTICO: ["qr.escanear", "jornadas.ver", "jornadas.gestionar"],
+  OPERADOR: ["qr.escanear", "jornadas.ver", "jornadas.gestionar", "asistencia.ver"],
+  MANIPULADORA: ["qr.escanear", "jornadas.ver", "jornadas.gestionar", "asistencia.ver"],
+  COORDINADOR_LOGISTICO: ["qr.escanear", "jornadas.ver", "jornadas.gestionar", "asistencia.ver"],
 };
 
 export async function seedRolesYPermisos(prisma: PrismaClient): Promise<{ maestro: Rol }> {
