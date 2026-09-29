@@ -1,0 +1,729 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =========================================================================
+// ESTRUCTURA EDUCATIVA: zonas, instituciones, sedes, grados, grupos
+// =========================================================================
+
+enum EstadoActivoInactivo {
+  ACTIVO
+  INACTIVO
+}
+
+model ZonaEducativa {
+  id     Int                  @id @default(autoincrement())
+  nombre String               @unique
+  estado EstadoActivoInactivo @default(ACTIVO)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  instituciones          Institucion[]
+  asignacionesOperativas AsignacionOperativa[]
+
+  @@map("zonas_educativas")
+}
+
+model Institucion {
+  id          Int                  @id @default(autoincrement())
+  nombre      String
+  codigoDane  String               @unique @map("codigo_dane")
+  zonaId      Int                  @map("zona_id")
+  zona        ZonaEducativa        @relation(fields: [zonaId], references: [id])
+  estado      EstadoActivoInactivo @default(ACTIVO)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sedes                  Sede[]
+  estudiantes            Estudiante[]
+  entregas               Entrega[]
+  traladosOrigen         Traslado[]        @relation("TrasladoInstitucionAnterior")
+  trasladosDestino       Traslado[]        @relation("TrasladoInstitucionNueva")
+
+  @@map("instituciones")
+}
+
+model Sede {
+  id             Int                  @id @default(autoincrement())
+  institucionId  Int                  @map("institucion_id")
+  institucion    Institucion          @relation(fields: [institucionId], references: [id])
+  nombre         String
+  codigoDaneSede String               @unique @map("codigo_dane_sede")
+  estado         EstadoActivoInactivo @default(ACTIVO)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  grupos                     Grupo[]
+  estudiantes                Estudiante[]
+  jornadas                   JornadaPae[]
+  entregas                   Entrega[]
+  novedades                  Novedad[]
+  asignacionesOperativasSede AsignacionOperativaSede[]
+  asignacionesDocentes       AsignacionDocente[]
+  trasladosOrigen            Traslado[]                @relation("TrasladoSedeAnterior")
+  trasladosDestino           Traslado[]                @relation("TrasladoSedeNueva")
+
+  @@map("sedes")
+}
+
+model Grado {
+  id     Int                  @id @default(autoincrement())
+  nombre String               @unique
+  nivel  Int
+  estado EstadoActivoInactivo @default(ACTIVO)
+
+  grupos      Grupo[]
+  estudiantes Estudiante[]
+
+  @@map("grados")
+}
+
+enum JornadaEscolar {
+  MANANA
+  TARDE
+  UNICA
+  NOCHE
+  FIN_DE_SEMANA
+}
+
+model Grupo {
+  id             Int                  @id @default(autoincrement())
+  sedeId         Int                  @map("sede_id")
+  sede           Sede                 @relation(fields: [sedeId], references: [id])
+  gradoId        Int                  @map("grado_id")
+  grado          Grado                @relation(fields: [gradoId], references: [id])
+  nombre         String
+  jornadaEscolar JornadaEscolar       @map("jornada_escolar")
+  anioLectivo    Int                  @map("anio_lectivo")
+  estado         EstadoActivoInactivo @default(ACTIVO)
+
+  estudiantes          Estudiante[]
+  asignacionesDocentes AsignacionDocente[]
+
+  @@unique([sedeId, gradoId, nombre, anioLectivo])
+  @@map("grupos")
+}
+
+// =========================================================================
+// ESTUDIANTES Y SU HISTORIAL
+// =========================================================================
+
+enum TipoIdentificadorEstudiante {
+  PAE
+  TEMP
+}
+
+enum EstadoEstudiante {
+  ACTIVO
+  RETIRADO
+  TRASLADADO
+  PROVISIONAL_PENDIENTE
+}
+
+enum OrigenEstudiante {
+  SIMAT
+  PROVISIONAL
+}
+
+model Estudiante {
+  // uuid: los docentes crean estudiantes provisionales sin conexión,
+  // el id no puede depender de un contador central en ese momento.
+  id                 String                      @id @default(uuid())
+  idPae              String                      @unique @map("id_pae")
+  tipoIdentificador  TipoIdentificadorEstudiante @map("tipo_identificador")
+  documentoTipo      String?                     @map("documento_tipo")
+  documentoNumero    String?                     @unique @map("documento_numero")
+  nombres            String
+  apellidos          String
+  fechaNacimiento    DateTime?                   @map("fecha_nacimiento") @db.Date
+  genero             String?
+
+  sedeId        Int    @map("sede_id")
+  sede          Sede   @relation(fields: [sedeId], references: [id])
+  institucionId Int    @map("institucion_id")
+  institucion   Institucion @relation(fields: [institucionId], references: [id])
+  gradoId       Int?   @map("grado_id")
+  grado         Grado? @relation(fields: [gradoId], references: [id])
+  grupoId       Int?   @map("grupo_id")
+  grupo         Grupo? @relation(fields: [grupoId], references: [id])
+
+  estado EstadoEstudiante @default(ACTIVO)
+  origen OrigenEstudiante
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  qrCode                  QrCode?
+  historico               HistoricoEstudiante[]
+  asistencias             Asistencia[]
+  entregas                Entrega[]
+  novedades               Novedad[]
+  traslados               Traslado[]
+  importacionesDetalle    ImportacionDetalle[]
+  vinculacionComoTemporal VinculacionProvisional?  @relation("VinculacionTemporal")
+  vinculacionComoOficial  VinculacionProvisional?  @relation("VinculacionOficial")
+
+  @@index([sedeId])
+  @@index([institucionId])
+  @@map("estudiantes")
+}
+
+enum OrigenCambioHistorico {
+  IMPORT_SIMAT
+  MANUAL
+}
+
+model HistoricoEstudiante {
+  id             String                @id @default(uuid())
+  estudianteId   String                @map("estudiante_id")
+  estudiante     Estudiante            @relation(fields: [estudianteId], references: [id])
+  campo          String
+  valorAnterior  String?               @map("valor_anterior")
+  valorNuevo     String?               @map("valor_nuevo")
+  origen         OrigenCambioHistorico
+  importacionId  Int?                  @map("importacion_id")
+  importacion    ImportacionSimat?     @relation(fields: [importacionId], references: [id])
+  usuarioId      String?               @map("usuario_id")
+  usuario        Usuario?              @relation(fields: [usuarioId], references: [id])
+  fecha          DateTime              @default(now())
+
+  @@index([estudianteId])
+  @@map("historico_estudiante")
+}
+
+// =========================================================================
+// IMPORTACIÓN SIMAT
+// =========================================================================
+
+enum EstadoImportacion {
+  PENDIENTE_REVISION
+  APLICADA
+  DESCARTADA
+}
+
+model ImportacionSimat {
+  id               Int               @id @default(autoincrement())
+  fechaImportacion DateTime          @default(now()) @map("fecha_importacion")
+  usuarioId        String            @map("usuario_id")
+  usuario          Usuario           @relation(fields: [usuarioId], references: [id])
+  archivoNombre    String            @map("archivo_nombre")
+
+  totalRecibidos Int @default(0) @map("total_recibidos")
+  nuevos         Int @default(0)
+  actualizados   Int @default(0)
+  retirados      Int @default(0)
+  trasladados    Int @default(0)
+  sinCambios     Int @default(0) @map("sin_cambios")
+  errores        Int @default(0)
+
+  estado EstadoImportacion @default(PENDIENTE_REVISION)
+
+  detalles  ImportacionDetalle[]
+  historico HistoricoEstudiante[]
+  traslados Traslado[]
+
+  @@map("importaciones_simat")
+}
+
+enum TipoCambioImportacion {
+  NUEVO
+  ACTUALIZADO
+  RETIRADO
+  TRASLADADO
+  SIN_CAMBIO
+  ERROR
+}
+
+model ImportacionDetalle {
+  id            String                @id @default(uuid())
+  importacionId Int                   @map("importacion_id")
+  importacion   ImportacionSimat      @relation(fields: [importacionId], references: [id])
+  estudianteId  String?               @map("estudiante_id")
+  estudiante    Estudiante?           @relation(fields: [estudianteId], references: [id])
+  tipoCambio    TipoCambioImportacion @map("tipo_cambio")
+  detalle       Json?
+
+  @@index([importacionId])
+  @@map("importaciones_detalle")
+}
+
+// =========================================================================
+// TRASLADOS Y VINCULACIÓN DE PROVISIONALES
+// =========================================================================
+
+enum EstadoTraslado {
+  PENDIENTE
+  CONFIRMADO
+}
+
+model Traslado {
+  id                     String            @id @default(uuid())
+  estudianteId           String            @map("estudiante_id")
+  estudiante             Estudiante        @relation(fields: [estudianteId], references: [id])
+  institucionAnteriorId  Int?              @map("institucion_anterior_id")
+  institucionAnterior    Institucion?      @relation("TrasladoInstitucionAnterior", fields: [institucionAnteriorId], references: [id])
+  sedeAnteriorId         Int?              @map("sede_anterior_id")
+  sedeAnterior           Sede?             @relation("TrasladoSedeAnterior", fields: [sedeAnteriorId], references: [id])
+  institucionNuevaId     Int               @map("institucion_nueva_id")
+  institucionNueva       Institucion       @relation("TrasladoInstitucionNueva", fields: [institucionNuevaId], references: [id])
+  sedeNuevaId            Int               @map("sede_nueva_id")
+  sedeNueva              Sede              @relation("TrasladoSedeNueva", fields: [sedeNuevaId], references: [id])
+  fechaDeteccion         DateTime          @default(now()) @map("fecha_deteccion")
+  importacionId          Int?              @map("importacion_id")
+  importacion            ImportacionSimat? @relation(fields: [importacionId], references: [id])
+  estado                 EstadoTraslado    @default(PENDIENTE)
+
+  @@index([estudianteId])
+  @@map("traslados")
+}
+
+model VinculacionProvisional {
+  id                     String     @id @default(uuid())
+  estudianteTemporalId   String     @unique @map("estudiante_temporal_id")
+  estudianteTemporal     Estudiante @relation("VinculacionTemporal", fields: [estudianteTemporalId], references: [id])
+  estudianteOficialId    String     @unique @map("estudiante_oficial_id")
+  estudianteOficial      Estudiante @relation("VinculacionOficial", fields: [estudianteOficialId], references: [id])
+  fechaVinculacion       DateTime   @default(now()) @map("fecha_vinculacion")
+  usuarioId              String     @map("usuario_id")
+  usuario                Usuario    @relation(fields: [usuarioId], references: [id])
+
+  @@map("vinculaciones_provisionales")
+}
+
+// =========================================================================
+// QR
+// =========================================================================
+
+enum EstadoQr {
+  ACTIVO
+  REVOCADO
+}
+
+model QrCode {
+  id            Int        @id @default(autoincrement())
+  estudianteId  String     @unique @map("estudiante_id")
+  estudiante    Estudiante @relation(fields: [estudianteId], references: [id])
+  token         String     @unique
+  estado        EstadoQr   @default(ACTIVO)
+  versionCarnet Int        @default(1) @map("version_carnet")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("qr_codes")
+}
+
+// =========================================================================
+// USUARIOS, ROLES Y PERMISOS
+// =========================================================================
+
+model Rol {
+  id          Int     @id @default(autoincrement())
+  nombre      String  @unique
+  descripcion String?
+  esSistema   Boolean @default(false) @map("es_sistema")
+
+  permisos  RolPermiso[]
+  usuarios  Usuario[]
+
+  @@map("roles")
+}
+
+model Permiso {
+  id          Int     @id @default(autoincrement())
+  codigo      String  @unique
+  descripcion String?
+  modulo      String
+
+  roles         RolPermiso[]
+  usuariosExtra UsuarioPermisoExtra[]
+
+  @@map("permisos")
+}
+
+model RolPermiso {
+  rolId     Int     @map("rol_id")
+  rol       Rol     @relation(fields: [rolId], references: [id])
+  permisoId Int     @map("permiso_id")
+  permiso   Permiso @relation(fields: [permisoId], references: [id])
+
+  @@id([rolId, permisoId])
+  @@map("roles_permisos")
+}
+
+enum EstadoUsuario {
+  ACTIVO
+  INACTIVO
+}
+
+model Usuario {
+  id             String        @id @default(uuid())
+  nombreCompleto String        @map("nombre_completo")
+  documento      String?       @unique
+  usuarioLogin   String        @unique @map("usuario_login")
+  passwordHash   String        @map("password_hash")
+  rolId          Int           @map("rol_id")
+  rol            Rol           @relation(fields: [rolId], references: [id])
+  estado         EstadoUsuario @default(ACTIVO)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  permisosExtra          UsuarioPermisoExtra[]
+  asignacionesOperativas AsignacionOperativa[]
+  asignacionesDocentes   AsignacionDocente[]
+  dispositivos           Dispositivo[]
+  importacionesSimat     ImportacionSimat[]
+  historicoRegistrado    HistoricoEstudiante[]
+  vinculacionesRealizadas VinculacionProvisional[]
+  jornadasAbiertas       JornadaPae[]              @relation("JornadaUsuarioApertura")
+  jornadasCerradas       JornadaPae[]              @relation("JornadaUsuarioCierre")
+  asistenciasRegistradas Asistencia[]
+  solicitudesCreadas     SolicitudModificacion[]   @relation("SolicitudSolicitante")
+  solicitudesResueltas   SolicitudModificacion[]   @relation("SolicitudAutoriza")
+  entregasRegistradas    Entrega[]
+  novedadesRegistradas   Novedad[]
+  sincronizaciones       Sincronizacion[]
+  auditorias             Auditoria[]
+
+  @@map("usuarios")
+}
+
+enum TipoOverridePermiso {
+  OTORGADO
+  DENEGADO
+}
+
+model UsuarioPermisoExtra {
+  id        String              @id @default(uuid())
+  usuarioId String              @map("usuario_id")
+  usuario   Usuario             @relation(fields: [usuarioId], references: [id])
+  permisoId Int                 @map("permiso_id")
+  permiso   Permiso             @relation(fields: [permisoId], references: [id])
+  tipo      TipoOverridePermiso
+
+  @@unique([usuarioId, permisoId])
+  @@map("usuarios_permisos_extra")
+}
+
+// =========================================================================
+// ASIGNACIONES OPERATIVAS (coordinadores/operadores) Y DOCENTES
+// =========================================================================
+
+enum EstadoAsignacion {
+  ACTIVA
+  INACTIVA
+}
+
+model AsignacionOperativa {
+  id           String           @id @default(uuid())
+  usuarioId    String           @map("usuario_id")
+  usuario      Usuario          @relation(fields: [usuarioId], references: [id])
+  zonaId       Int              @map("zona_id")
+  zona         ZonaEducativa    @relation(fields: [zonaId], references: [id])
+  fechaInicio  DateTime         @map("fecha_inicio") @db.Date
+  fechaFin     DateTime?        @map("fecha_fin") @db.Date
+  estado       EstadoAsignacion @default(ACTIVA)
+
+  sedes AsignacionOperativaSede[]
+
+  @@map("asignaciones_operativas")
+}
+
+model AsignacionOperativaSede {
+  asignacionId String              @map("asignacion_id")
+  asignacion   AsignacionOperativa @relation(fields: [asignacionId], references: [id])
+  sedeId       Int                 @map("sede_id")
+  sede         Sede                @relation(fields: [sedeId], references: [id])
+
+  @@id([asignacionId, sedeId])
+  @@map("asignaciones_operativas_sedes")
+}
+
+model AsignacionDocente {
+  id          String           @id @default(uuid())
+  usuarioId   String           @map("usuario_id")
+  usuario     Usuario          @relation(fields: [usuarioId], references: [id])
+  sedeId      Int              @map("sede_id")
+  sede        Sede             @relation(fields: [sedeId], references: [id])
+  grupoId     Int?             @map("grupo_id")
+  grupo       Grupo?           @relation(fields: [grupoId], references: [id])
+  anioLectivo Int              @map("anio_lectivo")
+  fechaInicio DateTime         @map("fecha_inicio") @db.Date
+  fechaFin    DateTime?        @map("fecha_fin") @db.Date
+  estado      EstadoAsignacion @default(ACTIVA)
+
+  @@map("asignaciones_docentes")
+}
+
+// =========================================================================
+// DISPOSITIVOS
+// =========================================================================
+
+enum TipoDispositivo {
+  ANDROID
+  WINDOWS
+  WEB
+}
+
+enum EstadoDispositivo {
+  ACTIVO
+  INACTIVO
+}
+
+model Dispositivo {
+  id                   String            @id @default(uuid())
+  identificadorUnico   String            @unique @map("identificador_unico")
+  usuarioPrincipalId   String?           @map("usuario_principal_id")
+  usuarioPrincipal     Usuario?          @relation(fields: [usuarioPrincipalId], references: [id])
+  tipo                 TipoDispositivo
+  nombre               String?
+  ultimaSincronizacion DateTime?         @map("ultima_sincronizacion")
+  estado               EstadoDispositivo @default(ACTIVO)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  asistencias      Asistencia[]
+  entregas         Entrega[]
+  auditorias       Auditoria[]
+  sincronizaciones Sincronizacion[]
+  colaSalida       ColaSincronizacion[]
+
+  @@map("dispositivos")
+}
+
+// =========================================================================
+// JORNADA PAE, ASISTENCIA Y ENTREGAS
+// =========================================================================
+
+enum EstadoJornada {
+  NO_INICIADA
+  ABIERTA
+  EN_ENTREGA
+  CERRADA
+  SINCRONIZANDO
+  SINCRONIZADA
+}
+
+model JornadaPae {
+  // uuid: la abre un operador en campo, posiblemente sin conexión.
+  id     String        @id @default(uuid())
+  sedeId Int           @map("sede_id")
+  sede   Sede          @relation(fields: [sedeId], references: [id])
+  fecha  DateTime      @db.Date
+  estado EstadoJornada @default(NO_INICIADA)
+
+  usuarioAperturaId String?   @map("usuario_apertura_id")
+  usuarioApertura   Usuario?  @relation("JornadaUsuarioApertura", fields: [usuarioAperturaId], references: [id])
+  horaApertura      DateTime? @map("hora_apertura")
+  usuarioCierreId   String?   @map("usuario_cierre_id")
+  usuarioCierre     Usuario?  @relation("JornadaUsuarioCierre", fields: [usuarioCierreId], references: [id])
+  horaCierre        DateTime? @map("hora_cierre")
+
+  asistencias Asistencia[]
+  entregas    Entrega[]
+
+  @@unique([sedeId, fecha])
+  @@map("jornadas_pae")
+}
+
+enum EstadoAsistencia {
+  ASISTIO
+  NO_ASISTIO
+}
+
+model Asistencia {
+  id                String           @id @default(uuid())
+  estudianteId      String           @map("estudiante_id")
+  estudiante        Estudiante       @relation(fields: [estudianteId], references: [id])
+  jornadaId         String           @map("jornada_id")
+  jornada           JornadaPae       @relation(fields: [jornadaId], references: [id])
+  estado            EstadoAsistencia
+  usuarioId         String           @map("usuario_id")
+  usuario           Usuario          @relation(fields: [usuarioId], references: [id])
+  dispositivoId     String?          @map("dispositivo_id")
+  dispositivo       Dispositivo?     @relation(fields: [dispositivoId], references: [id])
+  fechaHoraRegistro DateTime         @default(now()) @map("fecha_hora_registro")
+  bloqueada         Boolean          @default(false)
+
+  solicitudesModificacion SolicitudModificacion[]
+
+  @@unique([estudianteId, jornadaId])
+  @@map("asistencia")
+}
+
+enum EstadoSolicitudModificacion {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+}
+
+model SolicitudModificacion {
+  id                    String                      @id @default(uuid())
+  asistenciaId          String                      @map("asistencia_id")
+  asistencia            Asistencia                  @relation(fields: [asistenciaId], references: [id])
+  valorPropuesto        EstadoAsistencia            @map("valor_propuesto")
+  motivo                String
+  usuarioSolicitanteId  String                      @map("usuario_solicitante_id")
+  usuarioSolicitante    Usuario                     @relation("SolicitudSolicitante", fields: [usuarioSolicitanteId], references: [id])
+  estado                EstadoSolicitudModificacion @default(PENDIENTE)
+  usuarioAutorizaId     String?                     @map("usuario_autoriza_id")
+  usuarioAutoriza       Usuario?                    @relation("SolicitudAutoriza", fields: [usuarioAutorizaId], references: [id])
+  fechaSolicitud        DateTime                    @default(now()) @map("fecha_solicitud")
+  fechaResolucion       DateTime?                   @map("fecha_resolucion")
+
+  @@map("solicitudes_modificacion")
+}
+
+enum TipoEntrega {
+  NORMAL
+  REDISTRIBUCION
+}
+
+enum ResultadoEntrega {
+  AUTORIZADA
+  RECHAZADA
+}
+
+model Entrega {
+  id                String           @id @default(uuid())
+  estudianteId      String           @map("estudiante_id")
+  estudiante        Estudiante       @relation(fields: [estudianteId], references: [id])
+  jornadaId         String           @map("jornada_id")
+  jornada           JornadaPae       @relation(fields: [jornadaId], references: [id])
+  tipo              TipoEntrega
+  entregaOriginalId String?          @map("entrega_original_id")
+  entregaOriginal   Entrega?         @relation("RedistribucionDeEntrega", fields: [entregaOriginalId], references: [id])
+  redistribuciones  Entrega[]        @relation("RedistribucionDeEntrega")
+  fechaHora         DateTime         @default(now()) @map("fecha_hora")
+  usuarioId         String           @map("usuario_id")
+  usuario           Usuario          @relation(fields: [usuarioId], references: [id])
+  dispositivoId     String?          @map("dispositivo_id")
+  dispositivo       Dispositivo?     @relation(fields: [dispositivoId], references: [id])
+  sedeId            Int              @map("sede_id")
+  sede              Sede             @relation(fields: [sedeId], references: [id])
+  institucionId     Int              @map("institucion_id")
+  institucion       Institucion      @relation(fields: [institucionId], references: [id])
+  resultado         ResultadoEntrega
+  motivoRechazo     String?          @map("motivo_rechazo")
+
+  @@index([estudianteId, jornadaId])
+  @@map("entregas")
+}
+
+// =========================================================================
+// NOVEDADES
+// =========================================================================
+
+enum TipoNovedad {
+  RETIRO
+  TRASLADO_REPORTADO
+  OTRO
+}
+
+enum EstadoNovedad {
+  ABIERTA
+  CERRADA
+}
+
+model Novedad {
+  id           String        @id @default(uuid())
+  estudianteId String?       @map("estudiante_id")
+  estudiante   Estudiante?   @relation(fields: [estudianteId], references: [id])
+  sedeId       Int           @map("sede_id")
+  sede         Sede          @relation(fields: [sedeId], references: [id])
+  tipo         TipoNovedad
+  descripcion  String
+  usuarioId    String        @map("usuario_id")
+  usuario      Usuario       @relation(fields: [usuarioId], references: [id])
+  fecha        DateTime      @default(now())
+  estado       EstadoNovedad @default(ABIERTA)
+
+  @@map("novedades")
+}
+
+// =========================================================================
+// SINCRONIZACIÓN Y AUDITORÍA
+// =========================================================================
+
+enum OperacionSync {
+  INSERT
+  UPDATE
+}
+
+enum EstadoColaSincronizacion {
+  PENDIENTE
+  ENVIADO
+  CONFIRMADO
+  CONFLICTO
+}
+
+model ColaSincronizacion {
+  id             String                   @id @default(uuid())
+  entidad        String
+  entidadId      String                   @map("entidad_id")
+  operacion      OperacionSync
+  payload        Json
+  dispositivoId  String                   @map("dispositivo_id")
+  dispositivo    Dispositivo              @relation(fields: [dispositivoId], references: [id])
+  estado         EstadoColaSincronizacion @default(PENDIENTE)
+  intentos       Int                      @default(0)
+  timestampLocal DateTime                 @map("timestamp_local")
+  createdAt      DateTime                 @default(now()) @map("created_at")
+
+  @@index([dispositivoId, estado])
+  @@map("cola_sincronizacion")
+}
+
+enum TipoSincronizacion {
+  INTERNET
+  BLUETOOTH
+}
+
+enum EstadoSincronizacion {
+  EXITOSA
+  PARCIAL
+  FALLIDA
+}
+
+model Sincronizacion {
+  id                 String               @id @default(uuid())
+  dispositivoId      String               @map("dispositivo_id")
+  dispositivo        Dispositivo          @relation(fields: [dispositivoId], references: [id])
+  usuarioId          String               @map("usuario_id")
+  usuario            Usuario              @relation(fields: [usuarioId], references: [id])
+  tipo               TipoSincronizacion
+  fechaInicio        DateTime             @map("fecha_inicio")
+  fechaFin           DateTime?            @map("fecha_fin")
+  registrosEnviados  Int                  @default(0) @map("registros_enviados")
+  registrosRecibidos Int                  @default(0) @map("registros_recibidos")
+  estado             EstadoSincronizacion
+  detalle            Json?
+
+  @@map("sincronizaciones")
+}
+
+model Auditoria {
+  id            String   @id @default(uuid())
+  usuarioId     String?  @map("usuario_id")
+  usuario       Usuario? @relation(fields: [usuarioId], references: [id])
+  accion        String
+  entidad       String
+  entidadId     String?  @map("entidad_id")
+  valorAnterior Json?    @map("valor_anterior")
+  valorNuevo    Json?    @map("valor_nuevo")
+  motivo        String?
+  fechaHora     DateTime @default(now()) @map("fecha_hora")
+  dispositivoId String?  @map("dispositivo_id")
+  dispositivo   Dispositivo? @relation(fields: [dispositivoId], references: [id])
+  ip            String?
+
+  @@index([entidad, entidadId])
+  @@map("auditoria")
+}
