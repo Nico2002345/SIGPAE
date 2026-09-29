@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
+import { ZodError } from "zod";
 
 export class HttpError extends Error {
   status: number;
@@ -15,6 +16,11 @@ export function errorHandler(
   res: Response,
   _next: NextFunction,
 ): void {
+  if (err instanceof ZodError) {
+    res.status(400).json({ error: "Datos inválidos", detalles: err.issues });
+    return;
+  }
+
   const status = err instanceof HttpError ? err.status : 500;
   const message = err instanceof Error ? err.message : "Error interno del servidor";
 
