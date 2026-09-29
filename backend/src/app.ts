@@ -13,6 +13,7 @@ import { institucionesRouter } from "./modules/estructura/instituciones.routes.j
 import { sedesRouter } from "./modules/estructura/sedes.routes.js";
 import { zonasRouter } from "./modules/estructura/zonas.routes.js";
 import { qrRouter } from "./modules/qr/qr.routes.js";
+import { reportesRouter } from "./modules/reportes/reportes.routes.js";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes.js";
 
 export function createApp(): Express {
@@ -38,6 +39,7 @@ export function createApp(): Express {
   app.use("/jornadas", jornadasRouter);
   app.use("/asistencia", asistenciaRouter);
   app.use("/entregas", entregasRouter);
+  app.use("/reportes", reportesRouter);
 
   app.use(errorHandler);
 

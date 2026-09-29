@@ -88,6 +88,8 @@ export const PERMISOS = [
 
   { codigo: "entregas.registrar", modulo: "entregas", descripcion: "Registrar una entrega de PAE escaneando el QR del estudiante" },
   { codigo: "entregas.ver", modulo: "entregas", descripcion: "Consultar entregas y su resumen por jornada" },
+
+  { codigo: "reportes.ver", modulo: "reportes", descripcion: "Consultar y exportar reportes del programa" },
 ];
 
 // Permisos otorgados a roles distintos de MAESTRO (que siempre recibe todos).
@@ -104,9 +106,7 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
     "asistencia.registrar",
     "asistencia.solicitar_modificacion",
   ],
-  OPERADOR: ["qr.escanear", "jornadas.ver", "jornadas.gestionar", "asistencia.ver", "entregas.registrar", "entregas.ver"],
-  MANIPULADORA: ["qr.escanear", "jornadas.ver", "jornadas.gestionar", "asistencia.ver", "entregas.registrar", "entregas.ver"],
-  COORDINADOR_LOGISTICO: [
+  OPERADOR: [
     "qr.escanear",
     "jornadas.ver",
     "jornadas.gestionar",
@@ -114,6 +114,27 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
     "entregas.registrar",
     "entregas.ver",
   ],
+  MANIPULADORA: [
+    "qr.escanear",
+    "jornadas.ver",
+    "jornadas.gestionar",
+    "asistencia.ver",
+    "entregas.registrar",
+    "entregas.ver",
+  ],
+  COORDINADOR_LOGISTICO: [
+    "qr.escanear",
+    "jornadas.ver",
+    "jornadas.gestionar",
+    "asistencia.ver",
+    "entregas.registrar",
+    "entregas.ver",
+    "reportes.ver",
+  ],
+  // Rol de solo lectura/supervisión (regla 13): sin permisos operativos de
+  // registro, únicamente consulta y reportes.
+  SUPERVISION_PAE: ["estudiantes.ver", "jornadas.ver", "asistencia.ver", "entregas.ver", "reportes.ver"],
+  VEEDOR_PAE: ["estudiantes.ver", "jornadas.ver", "asistencia.ver", "entregas.ver", "reportes.ver"],
 };
 
 export async function seedRolesYPermisos(prisma: PrismaClient): Promise<{ maestro: Rol }> {
