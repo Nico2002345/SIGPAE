@@ -85,6 +85,9 @@ export const PERMISOS = [
     modulo: "asistencia",
     descripcion: "Aprobar o rechazar solicitudes de modificación de asistencia",
   },
+
+  { codigo: "entregas.registrar", modulo: "entregas", descripcion: "Registrar una entrega de PAE escaneando el QR del estudiante" },
+  { codigo: "entregas.ver", modulo: "entregas", descripcion: "Consultar entregas y su resumen por jornada" },
 ];
 
 // Permisos otorgados a roles distintos de MAESTRO (que siempre recibe todos).
@@ -101,9 +104,16 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
     "asistencia.registrar",
     "asistencia.solicitar_modificacion",
   ],
-  OPERADOR: ["qr.escanear", "jornadas.ver", "jornadas.gestionar", "asistencia.ver"],
-  MANIPULADORA: ["qr.escanear", "jornadas.ver", "jornadas.gestionar", "asistencia.ver"],
-  COORDINADOR_LOGISTICO: ["qr.escanear", "jornadas.ver", "jornadas.gestionar", "asistencia.ver"],
+  OPERADOR: ["qr.escanear", "jornadas.ver", "jornadas.gestionar", "asistencia.ver", "entregas.registrar", "entregas.ver"],
+  MANIPULADORA: ["qr.escanear", "jornadas.ver", "jornadas.gestionar", "asistencia.ver", "entregas.registrar", "entregas.ver"],
+  COORDINADOR_LOGISTICO: [
+    "qr.escanear",
+    "jornadas.ver",
+    "jornadas.gestionar",
+    "asistencia.ver",
+    "entregas.registrar",
+    "entregas.ver",
+  ],
 };
 
 export async function seedRolesYPermisos(prisma: PrismaClient): Promise<{ maestro: Rol }> {
