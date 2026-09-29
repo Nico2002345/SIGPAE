@@ -3,6 +3,11 @@ import express, { type Express } from "express";
 import helmet from "helmet";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
+import { gradosRouter } from "./modules/estructura/grados.routes.js";
+import { gruposRouter } from "./modules/estructura/grupos.routes.js";
+import { institucionesRouter } from "./modules/estructura/instituciones.routes.js";
+import { sedesRouter } from "./modules/estructura/sedes.routes.js";
+import { zonasRouter } from "./modules/estructura/zonas.routes.js";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes.js";
 
 export function createApp(): Express {
@@ -18,6 +23,11 @@ export function createApp(): Express {
 
   app.use("/auth", authRouter);
   app.use("/usuarios", usuariosRouter);
+  app.use("/zonas", zonasRouter);
+  app.use("/instituciones", institucionesRouter);
+  app.use("/sedes", sedesRouter);
+  app.use("/grados", gradosRouter);
+  app.use("/grupos", gruposRouter);
 
   app.use(errorHandler);
 
