@@ -5,6 +5,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { authRouter } from "./modules/auth/auth.routes.js";
 import { estudiantesRouter } from "./modules/estudiantes/estudiantes.routes.js";
 import { gradosRouter } from "./modules/estructura/grados.routes.js";
+import { jornadasRouter } from "./modules/jornadas/jornadas.routes.js";
 import { gruposRouter } from "./modules/estructura/grupos.routes.js";
 import { institucionesRouter } from "./modules/estructura/instituciones.routes.js";
 import { sedesRouter } from "./modules/estructura/sedes.routes.js";
@@ -32,6 +33,7 @@ export function createApp(): Express {
   app.use("/grupos", gruposRouter);
   app.use("/estudiantes", estudiantesRouter);
   app.use("/qr", qrRouter);
+  app.use("/jornadas", jornadasRouter);
 
   app.use(errorHandler);
 
