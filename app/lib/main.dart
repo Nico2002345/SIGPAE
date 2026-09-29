@@ -1,34 +1,47 @@
 import 'package:flutter/material.dart';
 
 import 'core/auth_repository.dart';
+import 'core/offline/asistencia_offline_repository.dart';
+import 'core/offline/local_database.dart';
 import 'core/session.dart';
 import 'features/auth/login_screen.dart';
 import 'features/home/home_screen.dart';
 
 void main() {
-  runApp(SigpaeApp(authRepository: AuthRepository()));
+  final localDatabase = LocalDatabase();
+  runApp(SigpaeApp(
+    authRepository: AuthRepository(),
+    asistenciaOfflineRepository: AsistenciaOfflineRepository(db: localDatabase),
+  ));
 }
 
 class SigpaeApp extends StatelessWidget {
-  SigpaeApp({super.key, AuthRepository? authRepository})
-      : authRepository = authRepository ?? AuthRepository();
+  SigpaeApp({super.key, AuthRepository? authRepository, AsistenciaOfflineRepository? asistenciaOfflineRepository})
+      : authRepository = authRepository ?? AuthRepository(),
+        asistenciaOfflineRepository =
+            asistenciaOfflineRepository ?? AsistenciaOfflineRepository(db: LocalDatabase());
 
   final AuthRepository authRepository;
+  final AsistenciaOfflineRepository asistenciaOfflineRepository;
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'SIGPAE',
       theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal)),
-      home: RaizAutenticacion(authRepository: authRepository),
+      home: RaizAutenticacion(
+        authRepository: authRepository,
+        asistenciaOfflineRepository: asistenciaOfflineRepository,
+      ),
     );
   }
 }
 
 class RaizAutenticacion extends StatefulWidget {
-  const RaizAutenticacion({super.key, required this.authRepository});
+  const RaizAutenticacion({super.key, required this.authRepository, required this.asistenciaOfflineRepository});
 
   final AuthRepository authRepository;
+  final AsistenciaOfflineRepository asistenciaOfflineRepository;
 
   @override
   State<RaizAutenticacion> createState() => _RaizAutenticacionState();
@@ -69,6 +82,7 @@ class _RaizAutenticacionState extends State<RaizAutenticacion> {
     return HomeScreen(
       sesion: _sesion!,
       authRepository: widget.authRepository,
+      asistenciaOfflineRepository: widget.asistenciaOfflineRepository,
       onLogout: () => setState(() => _sesion = null),
     );
   }

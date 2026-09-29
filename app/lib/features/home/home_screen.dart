@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../../core/auth_repository.dart';
+import '../../core/offline/asistencia_offline_repository.dart';
 import '../../core/session.dart';
+import '../asistencia/asistencia_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
     required this.sesion,
     required this.authRepository,
+    required this.asistenciaOfflineRepository,
     required this.onLogout,
   });
 
   final Sesion sesion;
   final AuthRepository authRepository;
+  final AsistenciaOfflineRepository asistenciaOfflineRepository;
   final VoidCallback onLogout;
 
   @override
@@ -38,6 +42,18 @@ class HomeScreen extends StatelessWidget {
             Text('Bienvenido, ${sesion.usuario.nombreCompleto}', style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
             Text('Rol: ${sesion.usuario.rol}'),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              icon: const Icon(Icons.fact_check_outlined),
+              label: const Text('Tomar asistencia'),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => AsistenciaScreen(sesion: sesion, repository: asistenciaOfflineRepository),
+                  ),
+                );
+              },
+            ),
           ],
         ),
       ),
