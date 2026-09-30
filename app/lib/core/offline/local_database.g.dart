@@ -1550,6 +1550,657 @@ class ColaSincronizacionLocalCompanion
   }
 }
 
+class $ColaBluetoothRecibidaTable extends ColaBluetoothRecibida
+    with TableInfo<$ColaBluetoothRecibidaTable, ColaBluetoothRecibidaData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ColaBluetoothRecibidaTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _dispositivoOrigenIdentificadorMeta =
+      const VerificationMeta('dispositivoOrigenIdentificador');
+  @override
+  late final GeneratedColumn<String> dispositivoOrigenIdentificador =
+      GeneratedColumn<String>(
+        'dispositivo_origen_identificador',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _dispositivoOrigenTipoMeta =
+      const VerificationMeta('dispositivoOrigenTipo');
+  @override
+  late final GeneratedColumn<String> dispositivoOrigenTipo =
+      GeneratedColumn<String>(
+        'dispositivo_origen_tipo',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _usuarioOrigenIdMeta = const VerificationMeta(
+    'usuarioOrigenId',
+  );
+  @override
+  late final GeneratedColumn<String> usuarioOrigenId = GeneratedColumn<String>(
+    'usuario_origen_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entidadMeta = const VerificationMeta(
+    'entidad',
+  );
+  @override
+  late final GeneratedColumn<String> entidad = GeneratedColumn<String>(
+    'entidad',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _entidadIdMeta = const VerificationMeta(
+    'entidadId',
+  );
+  @override
+  late final GeneratedColumn<String> entidadId = GeneratedColumn<String>(
+    'entidad_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _operacionMeta = const VerificationMeta(
+    'operacion',
+  );
+  @override
+  late final GeneratedColumn<String> operacion = GeneratedColumn<String>(
+    'operacion',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _payloadMeta = const VerificationMeta(
+    'payload',
+  );
+  @override
+  late final GeneratedColumn<String> payload = GeneratedColumn<String>(
+    'payload',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timestampLocalMeta = const VerificationMeta(
+    'timestampLocal',
+  );
+  @override
+  late final GeneratedColumn<DateTime> timestampLocal =
+      GeneratedColumn<DateTime>(
+        'timestamp_local',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _creadoEnMeta = const VerificationMeta(
+    'creadoEn',
+  );
+  @override
+  late final GeneratedColumn<DateTime> creadoEn = GeneratedColumn<DateTime>(
+    'creado_en',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    dispositivoOrigenIdentificador,
+    dispositivoOrigenTipo,
+    usuarioOrigenId,
+    entidad,
+    entidadId,
+    operacion,
+    payload,
+    timestampLocal,
+    creadoEn,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'cola_bluetooth_recibida';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ColaBluetoothRecibidaData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('dispositivo_origen_identificador')) {
+      context.handle(
+        _dispositivoOrigenIdentificadorMeta,
+        dispositivoOrigenIdentificador.isAcceptableOrUnknown(
+          data['dispositivo_origen_identificador']!,
+          _dispositivoOrigenIdentificadorMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_dispositivoOrigenIdentificadorMeta);
+    }
+    if (data.containsKey('dispositivo_origen_tipo')) {
+      context.handle(
+        _dispositivoOrigenTipoMeta,
+        dispositivoOrigenTipo.isAcceptableOrUnknown(
+          data['dispositivo_origen_tipo']!,
+          _dispositivoOrigenTipoMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_dispositivoOrigenTipoMeta);
+    }
+    if (data.containsKey('usuario_origen_id')) {
+      context.handle(
+        _usuarioOrigenIdMeta,
+        usuarioOrigenId.isAcceptableOrUnknown(
+          data['usuario_origen_id']!,
+          _usuarioOrigenIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_usuarioOrigenIdMeta);
+    }
+    if (data.containsKey('entidad')) {
+      context.handle(
+        _entidadMeta,
+        entidad.isAcceptableOrUnknown(data['entidad']!, _entidadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entidadMeta);
+    }
+    if (data.containsKey('entidad_id')) {
+      context.handle(
+        _entidadIdMeta,
+        entidadId.isAcceptableOrUnknown(data['entidad_id']!, _entidadIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_entidadIdMeta);
+    }
+    if (data.containsKey('operacion')) {
+      context.handle(
+        _operacionMeta,
+        operacion.isAcceptableOrUnknown(data['operacion']!, _operacionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_operacionMeta);
+    }
+    if (data.containsKey('payload')) {
+      context.handle(
+        _payloadMeta,
+        payload.isAcceptableOrUnknown(data['payload']!, _payloadMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadMeta);
+    }
+    if (data.containsKey('timestamp_local')) {
+      context.handle(
+        _timestampLocalMeta,
+        timestampLocal.isAcceptableOrUnknown(
+          data['timestamp_local']!,
+          _timestampLocalMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timestampLocalMeta);
+    }
+    if (data.containsKey('creado_en')) {
+      context.handle(
+        _creadoEnMeta,
+        creadoEn.isAcceptableOrUnknown(data['creado_en']!, _creadoEnMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {dispositivoOrigenIdentificador, entidadId},
+  ];
+  @override
+  ColaBluetoothRecibidaData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ColaBluetoothRecibidaData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      dispositivoOrigenIdentificador: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dispositivo_origen_identificador'],
+      )!,
+      dispositivoOrigenTipo: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}dispositivo_origen_tipo'],
+      )!,
+      usuarioOrigenId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}usuario_origen_id'],
+      )!,
+      entidad: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entidad'],
+      )!,
+      entidadId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entidad_id'],
+      )!,
+      operacion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}operacion'],
+      )!,
+      payload: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload'],
+      )!,
+      timestampLocal: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}timestamp_local'],
+      )!,
+      creadoEn: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}creado_en'],
+      )!,
+    );
+  }
+
+  @override
+  $ColaBluetoothRecibidaTable createAlias(String alias) {
+    return $ColaBluetoothRecibidaTable(attachedDatabase, alias);
+  }
+}
+
+class ColaBluetoothRecibidaData extends DataClass
+    implements Insertable<ColaBluetoothRecibidaData> {
+  final int id;
+  final String dispositivoOrigenIdentificador;
+  final String dispositivoOrigenTipo;
+  final String usuarioOrigenId;
+  final String entidad;
+  final String entidadId;
+  final String operacion;
+  final String payload;
+  final DateTime timestampLocal;
+  final DateTime creadoEn;
+  const ColaBluetoothRecibidaData({
+    required this.id,
+    required this.dispositivoOrigenIdentificador,
+    required this.dispositivoOrigenTipo,
+    required this.usuarioOrigenId,
+    required this.entidad,
+    required this.entidadId,
+    required this.operacion,
+    required this.payload,
+    required this.timestampLocal,
+    required this.creadoEn,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['dispositivo_origen_identificador'] = Variable<String>(
+      dispositivoOrigenIdentificador,
+    );
+    map['dispositivo_origen_tipo'] = Variable<String>(dispositivoOrigenTipo);
+    map['usuario_origen_id'] = Variable<String>(usuarioOrigenId);
+    map['entidad'] = Variable<String>(entidad);
+    map['entidad_id'] = Variable<String>(entidadId);
+    map['operacion'] = Variable<String>(operacion);
+    map['payload'] = Variable<String>(payload);
+    map['timestamp_local'] = Variable<DateTime>(timestampLocal);
+    map['creado_en'] = Variable<DateTime>(creadoEn);
+    return map;
+  }
+
+  ColaBluetoothRecibidaCompanion toCompanion(bool nullToAbsent) {
+    return ColaBluetoothRecibidaCompanion(
+      id: Value(id),
+      dispositivoOrigenIdentificador: Value(dispositivoOrigenIdentificador),
+      dispositivoOrigenTipo: Value(dispositivoOrigenTipo),
+      usuarioOrigenId: Value(usuarioOrigenId),
+      entidad: Value(entidad),
+      entidadId: Value(entidadId),
+      operacion: Value(operacion),
+      payload: Value(payload),
+      timestampLocal: Value(timestampLocal),
+      creadoEn: Value(creadoEn),
+    );
+  }
+
+  factory ColaBluetoothRecibidaData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ColaBluetoothRecibidaData(
+      id: serializer.fromJson<int>(json['id']),
+      dispositivoOrigenIdentificador: serializer.fromJson<String>(
+        json['dispositivoOrigenIdentificador'],
+      ),
+      dispositivoOrigenTipo: serializer.fromJson<String>(
+        json['dispositivoOrigenTipo'],
+      ),
+      usuarioOrigenId: serializer.fromJson<String>(json['usuarioOrigenId']),
+      entidad: serializer.fromJson<String>(json['entidad']),
+      entidadId: serializer.fromJson<String>(json['entidadId']),
+      operacion: serializer.fromJson<String>(json['operacion']),
+      payload: serializer.fromJson<String>(json['payload']),
+      timestampLocal: serializer.fromJson<DateTime>(json['timestampLocal']),
+      creadoEn: serializer.fromJson<DateTime>(json['creadoEn']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'dispositivoOrigenIdentificador': serializer.toJson<String>(
+        dispositivoOrigenIdentificador,
+      ),
+      'dispositivoOrigenTipo': serializer.toJson<String>(dispositivoOrigenTipo),
+      'usuarioOrigenId': serializer.toJson<String>(usuarioOrigenId),
+      'entidad': serializer.toJson<String>(entidad),
+      'entidadId': serializer.toJson<String>(entidadId),
+      'operacion': serializer.toJson<String>(operacion),
+      'payload': serializer.toJson<String>(payload),
+      'timestampLocal': serializer.toJson<DateTime>(timestampLocal),
+      'creadoEn': serializer.toJson<DateTime>(creadoEn),
+    };
+  }
+
+  ColaBluetoothRecibidaData copyWith({
+    int? id,
+    String? dispositivoOrigenIdentificador,
+    String? dispositivoOrigenTipo,
+    String? usuarioOrigenId,
+    String? entidad,
+    String? entidadId,
+    String? operacion,
+    String? payload,
+    DateTime? timestampLocal,
+    DateTime? creadoEn,
+  }) => ColaBluetoothRecibidaData(
+    id: id ?? this.id,
+    dispositivoOrigenIdentificador:
+        dispositivoOrigenIdentificador ?? this.dispositivoOrigenIdentificador,
+    dispositivoOrigenTipo: dispositivoOrigenTipo ?? this.dispositivoOrigenTipo,
+    usuarioOrigenId: usuarioOrigenId ?? this.usuarioOrigenId,
+    entidad: entidad ?? this.entidad,
+    entidadId: entidadId ?? this.entidadId,
+    operacion: operacion ?? this.operacion,
+    payload: payload ?? this.payload,
+    timestampLocal: timestampLocal ?? this.timestampLocal,
+    creadoEn: creadoEn ?? this.creadoEn,
+  );
+  ColaBluetoothRecibidaData copyWithCompanion(
+    ColaBluetoothRecibidaCompanion data,
+  ) {
+    return ColaBluetoothRecibidaData(
+      id: data.id.present ? data.id.value : this.id,
+      dispositivoOrigenIdentificador:
+          data.dispositivoOrigenIdentificador.present
+          ? data.dispositivoOrigenIdentificador.value
+          : this.dispositivoOrigenIdentificador,
+      dispositivoOrigenTipo: data.dispositivoOrigenTipo.present
+          ? data.dispositivoOrigenTipo.value
+          : this.dispositivoOrigenTipo,
+      usuarioOrigenId: data.usuarioOrigenId.present
+          ? data.usuarioOrigenId.value
+          : this.usuarioOrigenId,
+      entidad: data.entidad.present ? data.entidad.value : this.entidad,
+      entidadId: data.entidadId.present ? data.entidadId.value : this.entidadId,
+      operacion: data.operacion.present ? data.operacion.value : this.operacion,
+      payload: data.payload.present ? data.payload.value : this.payload,
+      timestampLocal: data.timestampLocal.present
+          ? data.timestampLocal.value
+          : this.timestampLocal,
+      creadoEn: data.creadoEn.present ? data.creadoEn.value : this.creadoEn,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ColaBluetoothRecibidaData(')
+          ..write('id: $id, ')
+          ..write(
+            'dispositivoOrigenIdentificador: $dispositivoOrigenIdentificador, ',
+          )
+          ..write('dispositivoOrigenTipo: $dispositivoOrigenTipo, ')
+          ..write('usuarioOrigenId: $usuarioOrigenId, ')
+          ..write('entidad: $entidad, ')
+          ..write('entidadId: $entidadId, ')
+          ..write('operacion: $operacion, ')
+          ..write('payload: $payload, ')
+          ..write('timestampLocal: $timestampLocal, ')
+          ..write('creadoEn: $creadoEn')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    dispositivoOrigenIdentificador,
+    dispositivoOrigenTipo,
+    usuarioOrigenId,
+    entidad,
+    entidadId,
+    operacion,
+    payload,
+    timestampLocal,
+    creadoEn,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ColaBluetoothRecibidaData &&
+          other.id == this.id &&
+          other.dispositivoOrigenIdentificador ==
+              this.dispositivoOrigenIdentificador &&
+          other.dispositivoOrigenTipo == this.dispositivoOrigenTipo &&
+          other.usuarioOrigenId == this.usuarioOrigenId &&
+          other.entidad == this.entidad &&
+          other.entidadId == this.entidadId &&
+          other.operacion == this.operacion &&
+          other.payload == this.payload &&
+          other.timestampLocal == this.timestampLocal &&
+          other.creadoEn == this.creadoEn);
+}
+
+class ColaBluetoothRecibidaCompanion
+    extends UpdateCompanion<ColaBluetoothRecibidaData> {
+  final Value<int> id;
+  final Value<String> dispositivoOrigenIdentificador;
+  final Value<String> dispositivoOrigenTipo;
+  final Value<String> usuarioOrigenId;
+  final Value<String> entidad;
+  final Value<String> entidadId;
+  final Value<String> operacion;
+  final Value<String> payload;
+  final Value<DateTime> timestampLocal;
+  final Value<DateTime> creadoEn;
+  const ColaBluetoothRecibidaCompanion({
+    this.id = const Value.absent(),
+    this.dispositivoOrigenIdentificador = const Value.absent(),
+    this.dispositivoOrigenTipo = const Value.absent(),
+    this.usuarioOrigenId = const Value.absent(),
+    this.entidad = const Value.absent(),
+    this.entidadId = const Value.absent(),
+    this.operacion = const Value.absent(),
+    this.payload = const Value.absent(),
+    this.timestampLocal = const Value.absent(),
+    this.creadoEn = const Value.absent(),
+  });
+  ColaBluetoothRecibidaCompanion.insert({
+    this.id = const Value.absent(),
+    required String dispositivoOrigenIdentificador,
+    required String dispositivoOrigenTipo,
+    required String usuarioOrigenId,
+    required String entidad,
+    required String entidadId,
+    required String operacion,
+    required String payload,
+    required DateTime timestampLocal,
+    this.creadoEn = const Value.absent(),
+  }) : dispositivoOrigenIdentificador = Value(dispositivoOrigenIdentificador),
+       dispositivoOrigenTipo = Value(dispositivoOrigenTipo),
+       usuarioOrigenId = Value(usuarioOrigenId),
+       entidad = Value(entidad),
+       entidadId = Value(entidadId),
+       operacion = Value(operacion),
+       payload = Value(payload),
+       timestampLocal = Value(timestampLocal);
+  static Insertable<ColaBluetoothRecibidaData> custom({
+    Expression<int>? id,
+    Expression<String>? dispositivoOrigenIdentificador,
+    Expression<String>? dispositivoOrigenTipo,
+    Expression<String>? usuarioOrigenId,
+    Expression<String>? entidad,
+    Expression<String>? entidadId,
+    Expression<String>? operacion,
+    Expression<String>? payload,
+    Expression<DateTime>? timestampLocal,
+    Expression<DateTime>? creadoEn,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (dispositivoOrigenIdentificador != null)
+        'dispositivo_origen_identificador': dispositivoOrigenIdentificador,
+      if (dispositivoOrigenTipo != null)
+        'dispositivo_origen_tipo': dispositivoOrigenTipo,
+      if (usuarioOrigenId != null) 'usuario_origen_id': usuarioOrigenId,
+      if (entidad != null) 'entidad': entidad,
+      if (entidadId != null) 'entidad_id': entidadId,
+      if (operacion != null) 'operacion': operacion,
+      if (payload != null) 'payload': payload,
+      if (timestampLocal != null) 'timestamp_local': timestampLocal,
+      if (creadoEn != null) 'creado_en': creadoEn,
+    });
+  }
+
+  ColaBluetoothRecibidaCompanion copyWith({
+    Value<int>? id,
+    Value<String>? dispositivoOrigenIdentificador,
+    Value<String>? dispositivoOrigenTipo,
+    Value<String>? usuarioOrigenId,
+    Value<String>? entidad,
+    Value<String>? entidadId,
+    Value<String>? operacion,
+    Value<String>? payload,
+    Value<DateTime>? timestampLocal,
+    Value<DateTime>? creadoEn,
+  }) {
+    return ColaBluetoothRecibidaCompanion(
+      id: id ?? this.id,
+      dispositivoOrigenIdentificador:
+          dispositivoOrigenIdentificador ?? this.dispositivoOrigenIdentificador,
+      dispositivoOrigenTipo:
+          dispositivoOrigenTipo ?? this.dispositivoOrigenTipo,
+      usuarioOrigenId: usuarioOrigenId ?? this.usuarioOrigenId,
+      entidad: entidad ?? this.entidad,
+      entidadId: entidadId ?? this.entidadId,
+      operacion: operacion ?? this.operacion,
+      payload: payload ?? this.payload,
+      timestampLocal: timestampLocal ?? this.timestampLocal,
+      creadoEn: creadoEn ?? this.creadoEn,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (dispositivoOrigenIdentificador.present) {
+      map['dispositivo_origen_identificador'] = Variable<String>(
+        dispositivoOrigenIdentificador.value,
+      );
+    }
+    if (dispositivoOrigenTipo.present) {
+      map['dispositivo_origen_tipo'] = Variable<String>(
+        dispositivoOrigenTipo.value,
+      );
+    }
+    if (usuarioOrigenId.present) {
+      map['usuario_origen_id'] = Variable<String>(usuarioOrigenId.value);
+    }
+    if (entidad.present) {
+      map['entidad'] = Variable<String>(entidad.value);
+    }
+    if (entidadId.present) {
+      map['entidad_id'] = Variable<String>(entidadId.value);
+    }
+    if (operacion.present) {
+      map['operacion'] = Variable<String>(operacion.value);
+    }
+    if (payload.present) {
+      map['payload'] = Variable<String>(payload.value);
+    }
+    if (timestampLocal.present) {
+      map['timestamp_local'] = Variable<DateTime>(timestampLocal.value);
+    }
+    if (creadoEn.present) {
+      map['creado_en'] = Variable<DateTime>(creadoEn.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ColaBluetoothRecibidaCompanion(')
+          ..write('id: $id, ')
+          ..write(
+            'dispositivoOrigenIdentificador: $dispositivoOrigenIdentificador, ',
+          )
+          ..write('dispositivoOrigenTipo: $dispositivoOrigenTipo, ')
+          ..write('usuarioOrigenId: $usuarioOrigenId, ')
+          ..write('entidad: $entidad, ')
+          ..write('entidadId: $entidadId, ')
+          ..write('operacion: $operacion, ')
+          ..write('payload: $payload, ')
+          ..write('timestampLocal: $timestampLocal, ')
+          ..write('creadoEn: $creadoEn')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$LocalDatabase extends GeneratedDatabase {
   _$LocalDatabase(QueryExecutor e) : super(e);
   $LocalDatabaseManager get managers => $LocalDatabaseManager(this);
@@ -1561,6 +2212,8 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
       $AsistenciasLocalesTable(this);
   late final $ColaSincronizacionLocalTable colaSincronizacionLocal =
       $ColaSincronizacionLocalTable(this);
+  late final $ColaBluetoothRecibidaTable colaBluetoothRecibida =
+      $ColaBluetoothRecibidaTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1570,6 +2223,7 @@ abstract class _$LocalDatabase extends GeneratedDatabase {
     jornadasCache,
     asistenciasLocales,
     colaSincronizacionLocal,
+    colaBluetoothRecibida,
   ];
 }
 
@@ -2502,6 +3156,338 @@ typedef $$ColaSincronizacionLocalTableProcessedTableManager =
       ColaSincronizacionLocalData,
       PrefetchHooks Function()
     >;
+typedef $$ColaBluetoothRecibidaTableCreateCompanionBuilder =
+    ColaBluetoothRecibidaCompanion Function({
+      Value<int> id,
+      required String dispositivoOrigenIdentificador,
+      required String dispositivoOrigenTipo,
+      required String usuarioOrigenId,
+      required String entidad,
+      required String entidadId,
+      required String operacion,
+      required String payload,
+      required DateTime timestampLocal,
+      Value<DateTime> creadoEn,
+    });
+typedef $$ColaBluetoothRecibidaTableUpdateCompanionBuilder =
+    ColaBluetoothRecibidaCompanion Function({
+      Value<int> id,
+      Value<String> dispositivoOrigenIdentificador,
+      Value<String> dispositivoOrigenTipo,
+      Value<String> usuarioOrigenId,
+      Value<String> entidad,
+      Value<String> entidadId,
+      Value<String> operacion,
+      Value<String> payload,
+      Value<DateTime> timestampLocal,
+      Value<DateTime> creadoEn,
+    });
+
+class $$ColaBluetoothRecibidaTableFilterComposer
+    extends Composer<_$LocalDatabase, $ColaBluetoothRecibidaTable> {
+  $$ColaBluetoothRecibidaTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dispositivoOrigenIdentificador =>
+      $composableBuilder(
+        column: $table.dispositivoOrigenIdentificador,
+        builder: (column) => ColumnFilters(column),
+      );
+
+  ColumnFilters<String> get dispositivoOrigenTipo => $composableBuilder(
+    column: $table.dispositivoOrigenTipo,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get usuarioOrigenId => $composableBuilder(
+    column: $table.usuarioOrigenId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entidad => $composableBuilder(
+    column: $table.entidad,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entidadId => $composableBuilder(
+    column: $table.entidadId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get operacion => $composableBuilder(
+    column: $table.operacion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get timestampLocal => $composableBuilder(
+    column: $table.timestampLocal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get creadoEn => $composableBuilder(
+    column: $table.creadoEn,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ColaBluetoothRecibidaTableOrderingComposer
+    extends Composer<_$LocalDatabase, $ColaBluetoothRecibidaTable> {
+  $$ColaBluetoothRecibidaTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dispositivoOrigenIdentificador =>
+      $composableBuilder(
+        column: $table.dispositivoOrigenIdentificador,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<String> get dispositivoOrigenTipo => $composableBuilder(
+    column: $table.dispositivoOrigenTipo,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get usuarioOrigenId => $composableBuilder(
+    column: $table.usuarioOrigenId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entidad => $composableBuilder(
+    column: $table.entidad,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get entidadId => $composableBuilder(
+    column: $table.entidadId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get operacion => $composableBuilder(
+    column: $table.operacion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payload => $composableBuilder(
+    column: $table.payload,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get timestampLocal => $composableBuilder(
+    column: $table.timestampLocal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get creadoEn => $composableBuilder(
+    column: $table.creadoEn,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ColaBluetoothRecibidaTableAnnotationComposer
+    extends Composer<_$LocalDatabase, $ColaBluetoothRecibidaTable> {
+  $$ColaBluetoothRecibidaTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get dispositivoOrigenIdentificador =>
+      $composableBuilder(
+        column: $table.dispositivoOrigenIdentificador,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<String> get dispositivoOrigenTipo => $composableBuilder(
+    column: $table.dispositivoOrigenTipo,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get usuarioOrigenId => $composableBuilder(
+    column: $table.usuarioOrigenId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get entidad =>
+      $composableBuilder(column: $table.entidad, builder: (column) => column);
+
+  GeneratedColumn<String> get entidadId =>
+      $composableBuilder(column: $table.entidadId, builder: (column) => column);
+
+  GeneratedColumn<String> get operacion =>
+      $composableBuilder(column: $table.operacion, builder: (column) => column);
+
+  GeneratedColumn<String> get payload =>
+      $composableBuilder(column: $table.payload, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestampLocal => $composableBuilder(
+    column: $table.timestampLocal,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get creadoEn =>
+      $composableBuilder(column: $table.creadoEn, builder: (column) => column);
+}
+
+class $$ColaBluetoothRecibidaTableTableManager
+    extends
+        RootTableManager<
+          _$LocalDatabase,
+          $ColaBluetoothRecibidaTable,
+          ColaBluetoothRecibidaData,
+          $$ColaBluetoothRecibidaTableFilterComposer,
+          $$ColaBluetoothRecibidaTableOrderingComposer,
+          $$ColaBluetoothRecibidaTableAnnotationComposer,
+          $$ColaBluetoothRecibidaTableCreateCompanionBuilder,
+          $$ColaBluetoothRecibidaTableUpdateCompanionBuilder,
+          (
+            ColaBluetoothRecibidaData,
+            BaseReferences<
+              _$LocalDatabase,
+              $ColaBluetoothRecibidaTable,
+              ColaBluetoothRecibidaData
+            >,
+          ),
+          ColaBluetoothRecibidaData,
+          PrefetchHooks Function()
+        > {
+  $$ColaBluetoothRecibidaTableTableManager(
+    _$LocalDatabase db,
+    $ColaBluetoothRecibidaTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ColaBluetoothRecibidaTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ColaBluetoothRecibidaTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ColaBluetoothRecibidaTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> dispositivoOrigenIdentificador =
+                    const Value.absent(),
+                Value<String> dispositivoOrigenTipo = const Value.absent(),
+                Value<String> usuarioOrigenId = const Value.absent(),
+                Value<String> entidad = const Value.absent(),
+                Value<String> entidadId = const Value.absent(),
+                Value<String> operacion = const Value.absent(),
+                Value<String> payload = const Value.absent(),
+                Value<DateTime> timestampLocal = const Value.absent(),
+                Value<DateTime> creadoEn = const Value.absent(),
+              }) => ColaBluetoothRecibidaCompanion(
+                id: id,
+                dispositivoOrigenIdentificador: dispositivoOrigenIdentificador,
+                dispositivoOrigenTipo: dispositivoOrigenTipo,
+                usuarioOrigenId: usuarioOrigenId,
+                entidad: entidad,
+                entidadId: entidadId,
+                operacion: operacion,
+                payload: payload,
+                timestampLocal: timestampLocal,
+                creadoEn: creadoEn,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String dispositivoOrigenIdentificador,
+                required String dispositivoOrigenTipo,
+                required String usuarioOrigenId,
+                required String entidad,
+                required String entidadId,
+                required String operacion,
+                required String payload,
+                required DateTime timestampLocal,
+                Value<DateTime> creadoEn = const Value.absent(),
+              }) => ColaBluetoothRecibidaCompanion.insert(
+                id: id,
+                dispositivoOrigenIdentificador: dispositivoOrigenIdentificador,
+                dispositivoOrigenTipo: dispositivoOrigenTipo,
+                usuarioOrigenId: usuarioOrigenId,
+                entidad: entidad,
+                entidadId: entidadId,
+                operacion: operacion,
+                payload: payload,
+                timestampLocal: timestampLocal,
+                creadoEn: creadoEn,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $ColaBluetoothRecibidaTable,
+                    ColaBluetoothRecibidaData
+                  >(table),
+                  BaseReferences<
+                    _$LocalDatabase,
+                    $ColaBluetoothRecibidaTable,
+                    ColaBluetoothRecibidaData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ColaBluetoothRecibidaTableProcessedTableManager =
+    ProcessedTableManager<
+      _$LocalDatabase,
+      $ColaBluetoothRecibidaTable,
+      ColaBluetoothRecibidaData,
+      $$ColaBluetoothRecibidaTableFilterComposer,
+      $$ColaBluetoothRecibidaTableOrderingComposer,
+      $$ColaBluetoothRecibidaTableAnnotationComposer,
+      $$ColaBluetoothRecibidaTableCreateCompanionBuilder,
+      $$ColaBluetoothRecibidaTableUpdateCompanionBuilder,
+      (
+        ColaBluetoothRecibidaData,
+        BaseReferences<
+          _$LocalDatabase,
+          $ColaBluetoothRecibidaTable,
+          ColaBluetoothRecibidaData
+        >,
+      ),
+      ColaBluetoothRecibidaData,
+      PrefetchHooks Function()
+    >;
 
 class $LocalDatabaseManager {
   final _$LocalDatabase _db;
@@ -2517,4 +3503,6 @@ class $LocalDatabaseManager {
         _db,
         _db.colaSincronizacionLocal,
       );
+  $$ColaBluetoothRecibidaTableTableManager get colaBluetoothRecibida =>
+      $$ColaBluetoothRecibidaTableTableManager(_db, _db.colaBluetoothRecibida);
 }

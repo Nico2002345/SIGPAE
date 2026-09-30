@@ -513,12 +513,13 @@ model Dispositivo {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  asistencias      Asistencia[]
-  entregas         Entrega[]
-  auditorias       Auditoria[]
-  sincronizaciones Sincronizacion[]
-  colaSalida       ColaSincronizacion[]
-  sesionesRefresco SesionRefresco[]
+  asistencias            Asistencia[]
+  entregas               Entrega[]
+  auditorias             Auditoria[]
+  sincronizaciones       Sincronizacion[]
+  sincronizacionesRelay  Sincronizacion[]     @relation("SincronizacionRelay")
+  colaSalida             ColaSincronizacion[]
+  sesionesRefresco       SesionRefresco[]
 
   @@map("dispositivos")
 }
@@ -720,8 +721,16 @@ enum EstadoSincronizacion {
 
 model Sincronizacion {
   id                 String               @id @default(uuid())
+  // Dispositivo cuyos datos se sincronizaron (el que registro los cambios,
+  // ej. la tablet de la manipuladora). En una sincronizacion directa por
+  // Internet es el mismo que transmite; en un relevo Bluetooth es distinto.
   dispositivoId      String               @map("dispositivo_id")
   dispositivo        Dispositivo          @relation(fields: [dispositivoId], references: [id])
+  // Dispositivo que efectivamente transmitio el lote al servidor (ej. el
+  // celular del coordinador que recibio los cambios por Bluetooth y los
+  // reenvio al tener señal). Null cuando la sincronizacion fue directa.
+  dispositivoRelayId String?              @map("dispositivo_relay_id")
+  dispositivoRelay   Dispositivo?         @relation("SincronizacionRelay", fields: [dispositivoRelayId], references: [id])
   usuarioId          String               @map("usuario_id")
   usuario            Usuario              @relation(fields: [usuarioId], references: [id])
   tipo               TipoSincronizacion

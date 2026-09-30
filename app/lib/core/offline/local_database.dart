@@ -57,12 +57,55 @@ class ColaSincronizacionLocal extends Table {
   DateTimeColumn get creadoEn => dateTime().withDefault(currentDateAndTime)();
 }
 
-@DriftDatabase(tables: [EstudiantesCache, JornadasCache, AsistenciasLocales, ColaSincronizacionLocal])
+/// Fase 13 (Bluetooth): en el dispositivo del coordinador, cambios recibidos
+/// por Bluetooth de una manipuladora sin señal, en espera de que el
+/// coordinador recupere conexión a Internet para reenviarlos al servidor
+/// (`/sincronizacion/lote` con tipo BLUETOOTH). La clave única por
+/// (dispositivo de origen + entidadId) hace que recibir el mismo ítem dos
+/// veces — por ejemplo porque la manipuladora reintentó el envío tras una
+/// desconexión sin confirmación — no lo duplique.
+class ColaBluetoothRecibida extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get dispositivoOrigenIdentificador => text()();
+  TextColumn get dispositivoOrigenTipo => text()();
+  TextColumn get usuarioOrigenId => text()();
+  TextColumn get entidad => text()();
+  TextColumn get entidadId => text()();
+  TextColumn get operacion => text()();
+  TextColumn get payload => text()();
+  DateTimeColumn get timestampLocal => dateTime()();
+  DateTimeColumn get creadoEn => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  List<Set<Column<Object>>> get uniqueKeys => [
+        {dispositivoOrigenIdentificador, entidadId},
+      ];
+}
+
+@DriftDatabase(
+  tables: [
+    EstudiantesCache,
+    JornadasCache,
+    AsistenciasLocales,
+    ColaSincronizacionLocal,
+    ColaBluetoothRecibida,
+  ],
+)
 class LocalDatabase extends _$LocalDatabase {
   LocalDatabase() : super(driftDatabase(name: 'sigpae_local'));
 
   LocalDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(colaBluetoothRecibida);
+          }
+        },
+      );
 }

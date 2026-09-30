@@ -16,11 +16,27 @@ const cambioSchema = z.object({
   timestampLocal: z.coerce.date(),
 });
 
-const procesarLoteSchema = z.object({
-  dispositivoId: z.string().uuid(),
-  tipo: z.enum(["INTERNET", "BLUETOOTH"]),
-  cambios: z.array(cambioSchema).min(1).max(500),
-});
+const dispositivoOrigenSchema = z.union([
+  z.object({ id: z.string().uuid() }),
+  z.object({
+    identificadorUnico: z.string().min(1),
+    tipo: z.enum(["ANDROID", "WINDOWS", "WEB"]),
+    usuarioId: z.string().uuid(),
+    nombre: z.string().min(1).optional(),
+  }),
+]);
+
+const procesarLoteSchema = z
+  .object({
+    dispositivoId: z.string().uuid(),
+    tipo: z.enum(["INTERNET", "BLUETOOTH"]),
+    dispositivoOrigen: dispositivoOrigenSchema.optional(),
+    cambios: z.array(cambioSchema).min(1).max(500),
+  })
+  .refine((data) => data.tipo !== "BLUETOOTH" || data.dispositivoOrigen !== undefined, {
+    message: "dispositivoOrigen es obligatorio cuando tipo es BLUETOOTH",
+    path: ["dispositivoOrigen"],
+  });
 
 sincronizacionRouter.post(
   "/lote",

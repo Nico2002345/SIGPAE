@@ -2,7 +2,11 @@ import type { Prisma, TipoSincronizacion } from "@prisma/client";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../middleware/errorHandler.js";
 import { registrarAsistencia } from "../asistencia/asistencia.service.js";
-import { obtenerDispositivoOFallar } from "../dispositivos/dispositivos.service.js";
+import {
+  type DispositivoOrigenInput,
+  obtenerDispositivoOFallar,
+  resolverDispositivoOrigen,
+} from "../dispositivos/dispositivos.service.js";
 
 interface CambioEntrante {
   entidad: string;
@@ -47,8 +51,26 @@ export async function procesarLote(data: {
   usuarioId: string;
   tipo: TipoSincronizacion;
   cambios: CambioEntrante[];
+  dispositivoOrigen?: DispositivoOrigenInput;
 }) {
+  // El dispositivo que transmite (el que tiene señal ahora) siempre debe
+  // existir, sea que sincronice lo suyo (Internet directo) o esté
+  // relevando lo de otro (Bluetooth).
   await obtenerDispositivoOFallar(data.dispositivoId);
+
+  let dispositivoOrigenId = data.dispositivoId;
+  let usuarioOrigenId = data.usuarioId;
+  let dispositivoRelayId: string | null = null;
+
+  if (data.tipo === "BLUETOOTH") {
+    if (!data.dispositivoOrigen) {
+      throw new HttpError(400, "La sincronización por Bluetooth requiere indicar el dispositivo de origen");
+    }
+    const origen = await resolverDispositivoOrigen(data.dispositivoOrigen);
+    dispositivoOrigenId = origen.dispositivoId;
+    usuarioOrigenId = origen.usuarioId;
+    dispositivoRelayId = data.dispositivoId;
+  }
 
   const fechaInicio = new Date();
   const detalle: { entidadId: string; motivo: string }[] = [];
@@ -63,8 +85,13 @@ export async function procesarLote(data: {
   );
 
   for (const cambio of cambiosOrdenados) {
+    // La clave de deduplicación (dispositivoOrigenId + entidadId) es la
+    // misma sea cual sea el transporte: si el relevo Bluetooth se
+    // interrumpe y el coordinador reintenta el mismo lote, o si reenvía un
+    // lote que ya había llegado, esto lo detecta igual que un reintento
+    // directo por Internet (reanudable, sin duplicar).
     const yaConfirmado = await prisma.colaSincronizacion.findFirst({
-      where: { dispositivoId: data.dispositivoId, entidadId: cambio.entidadId, estado: "CONFIRMADO" },
+      where: { dispositivoId: dispositivoOrigenId, entidadId: cambio.entidadId, estado: "CONFIRMADO" },
     });
     if (yaConfirmado) {
       // Reintento de un lote ya procesado (ej. se perdió la respuesta):
@@ -79,13 +106,13 @@ export async function procesarLote(data: {
         entidadId: cambio.entidadId,
         operacion: cambio.operacion,
         payload: cambio.payload as Prisma.InputJsonValue,
-        dispositivoId: data.dispositivoId,
+        dispositivoId: dispositivoOrigenId,
         timestampLocal: cambio.timestampLocal,
       },
     });
 
     try {
-      await aplicarCambio(cambio, data.usuarioId, data.dispositivoId);
+      await aplicarCambio(cambio, usuarioOrigenId, dispositivoOrigenId);
       await prisma.colaSincronizacion.update({ where: { id: registroCola.id }, data: { estado: "CONFIRMADO" } });
       confirmados += 1;
     } catch (error) {
@@ -103,8 +130,9 @@ export async function procesarLote(data: {
 
   const sincronizacion = await prisma.sincronizacion.create({
     data: {
-      dispositivoId: data.dispositivoId,
-      usuarioId: data.usuarioId,
+      dispositivoId: dispositivoOrigenId,
+      dispositivoRelayId: dispositivoRelayId ?? undefined,
+      usuarioId: usuarioOrigenId,
       tipo: data.tipo,
       fechaInicio,
       fechaFin: new Date(),
@@ -116,9 +144,15 @@ export async function procesarLote(data: {
   });
 
   await prisma.dispositivo.update({
-    where: { id: data.dispositivoId },
+    where: { id: dispositivoOrigenId },
     data: { ultimaSincronizacion: new Date() },
   });
+  if (dispositivoRelayId && dispositivoRelayId !== dispositivoOrigenId) {
+    await prisma.dispositivo.update({
+      where: { id: dispositivoRelayId },
+      data: { ultimaSincronizacion: new Date() },
+    });
+  }
 
   return {
     sincronizacion,
@@ -132,6 +166,7 @@ export async function listarSincronizaciones(filtros: { dispositivoId?: string; 
     where: { dispositivoId: filtros.dispositivoId, usuarioId: filtros.usuarioId },
     include: {
       dispositivo: { select: { id: true, identificadorUnico: true, tipo: true } },
+      dispositivoRelay: { select: { id: true, identificadorUnico: true, tipo: true } },
       usuario: { select: { id: true, nombreCompleto: true } },
     },
     orderBy: { fechaInicio: "desc" },
