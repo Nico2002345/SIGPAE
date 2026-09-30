@@ -6,6 +6,7 @@ import { authRouter } from "./modules/auth/auth.routes.js";
 import { asistenciaRouter } from "./modules/asistencia/asistencia.routes.js";
 import { auditoriaRouter } from "./modules/auditoria/auditoria.routes.js";
 import { capacitacionRouter } from "./modules/capacitacion/capacitacion.routes.js";
+import { dispositivosRouter } from "./modules/dispositivos/dispositivos.routes.js";
 import { entregasRouter } from "./modules/entregas/entregas.routes.js";
 import { estudiantesRouter } from "./modules/estudiantes/estudiantes.routes.js";
 import { gradosRouter } from "./modules/estructura/grados.routes.js";
@@ -16,6 +17,7 @@ import { sedesRouter } from "./modules/estructura/sedes.routes.js";
 import { zonasRouter } from "./modules/estructura/zonas.routes.js";
 import { qrRouter } from "./modules/qr/qr.routes.js";
 import { reportesRouter } from "./modules/reportes/reportes.routes.js";
+import { sincronizacionRouter } from "./modules/sincronizacion/sincronizacion.routes.js";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes.js";
 
 export function createApp(): Express {
@@ -44,6 +46,8 @@ export function createApp(): Express {
   app.use("/reportes", reportesRouter);
   app.use("/auditoria", auditoriaRouter);
   app.use("/capacitacion", capacitacionRouter);
+  app.use("/dispositivos", dispositivosRouter);
+  app.use("/sincronizacion", sincronizacionRouter);
 
   app.use(errorHandler);
 

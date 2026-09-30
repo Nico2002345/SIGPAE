@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/auth_repository.dart';
 import '../../core/offline/asistencia_offline_repository.dart';
+import '../../core/offline/dispositivo_repository.dart';
+import '../../core/offline/sincronizacion_service.dart';
 import '../../core/session.dart';
 import '../asistencia/asistencia_screen.dart';
 
@@ -11,12 +13,16 @@ class HomeScreen extends StatelessWidget {
     required this.sesion,
     required this.authRepository,
     required this.asistenciaOfflineRepository,
+    required this.dispositivoRepository,
+    required this.sincronizacionService,
     required this.onLogout,
   });
 
   final Sesion sesion;
   final AuthRepository authRepository;
   final AsistenciaOfflineRepository asistenciaOfflineRepository;
+  final DispositivoRepository dispositivoRepository;
+  final SincronizacionService sincronizacionService;
   final VoidCallback onLogout;
 
   @override
@@ -49,7 +55,12 @@ class HomeScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => AsistenciaScreen(sesion: sesion, repository: asistenciaOfflineRepository),
+                    builder: (_) => AsistenciaScreen(
+                      sesion: sesion,
+                      repository: asistenciaOfflineRepository,
+                      dispositivoRepository: dispositivoRepository,
+                      sincronizacionService: sincronizacionService,
+                    ),
                   ),
                 );
               },

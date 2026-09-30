@@ -100,6 +100,14 @@ export const PERMISOS = [
   },
   { codigo: "capacitacion.ver", modulo: "capacitacion", descripcion: "Consultar escenarios y evaluaciones de capacitación" },
   { codigo: "capacitacion.evaluar", modulo: "capacitacion", descripcion: "Registrar la evaluación de una capacitación" },
+
+  { codigo: "dispositivos.ver", modulo: "dispositivos", descripcion: "Consultar dispositivos registrados" },
+  {
+    codigo: "sincronizacion.registrar",
+    modulo: "sincronizacion",
+    descripcion: "Enviar un lote de cambios pendientes para sincronizar",
+  },
+  { codigo: "sincronizacion.ver", modulo: "sincronizacion", descripcion: "Consultar el historial de sincronizaciones" },
 ];
 
 // Catálogo inicial de escenarios practicables (regla 24 del spec, ejemplo
@@ -130,6 +138,7 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
     "asistencia.ver",
     "asistencia.registrar",
     "asistencia.solicitar_modificacion",
+    "sincronizacion.registrar",
   ],
   OPERADOR: [
     "qr.escanear",
@@ -138,6 +147,7 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
     "asistencia.ver",
     "entregas.registrar",
     "entregas.ver",
+    "sincronizacion.registrar",
   ],
   MANIPULADORA: [
     "qr.escanear",
@@ -146,6 +156,7 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
     "asistencia.ver",
     "entregas.registrar",
     "entregas.ver",
+    "sincronizacion.registrar",
   ],
   COORDINADOR_LOGISTICO: [
     "qr.escanear",
@@ -155,6 +166,8 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
     "entregas.registrar",
     "entregas.ver",
     "reportes.ver",
+    "sincronizacion.registrar",
+    "sincronizacion.ver",
   ],
   // Rol de solo lectura/supervisión (regla 13): sin permisos operativos de
   // registro, únicamente consulta y reportes.
@@ -165,8 +178,18 @@ const PERMISOS_POR_ROL: Record<string, string[]> = {
     "entregas.ver",
     "reportes.ver",
     "auditoria.ver",
+    "dispositivos.ver",
+    "sincronizacion.ver",
   ],
-  VEEDOR_PAE: ["estudiantes.ver", "jornadas.ver", "asistencia.ver", "entregas.ver", "reportes.ver", "auditoria.ver"],
+  VEEDOR_PAE: [
+    "estudiantes.ver",
+    "jornadas.ver",
+    "asistencia.ver",
+    "entregas.ver",
+    "reportes.ver",
+    "auditoria.ver",
+    "sincronizacion.ver",
+  ],
 };
 
 export async function seedEscenariosCapacitacion(prisma: PrismaClient): Promise<void> {
