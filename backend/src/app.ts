@@ -18,6 +18,7 @@ import { zonasRouter } from "./modules/estructura/zonas.routes.js";
 import { qrRouter } from "./modules/qr/qr.routes.js";
 import { reportesRouter } from "./modules/reportes/reportes.routes.js";
 import { sincronizacionRouter } from "./modules/sincronizacion/sincronizacion.routes.js";
+import { rolesRouter } from "./modules/usuarios/roles.routes.js";
 import { usuariosRouter } from "./modules/usuarios/usuarios.routes.js";
 
 export function createApp(): Express {
@@ -33,6 +34,7 @@ export function createApp(): Express {
 
   app.use("/auth", authRouter);
   app.use("/usuarios", usuariosRouter);
+  app.use("/roles", rolesRouter);
   app.use("/zonas", zonasRouter);
   app.use("/instituciones", institucionesRouter);
   app.use("/sedes", sedesRouter);
