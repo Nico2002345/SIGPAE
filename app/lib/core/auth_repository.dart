@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import 'app_config.dart';
 import 'session.dart';
 import 'token_storage.dart';
 
@@ -12,7 +13,7 @@ class AuthException implements Exception {
 
 class AuthRepository {
   AuthRepository({String? baseUrl, http.Client? httpClient, TokenStorage? storage})
-      : baseUrl = baseUrl ?? 'http://localhost:3000',
+      : baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
         _httpClient = httpClient ?? http.Client(),
         _storage = storage ?? const SecureTokenStorage();
 

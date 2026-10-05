@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
@@ -103,7 +104,7 @@ class _AsistenciaScreenState extends State<AsistenciaScreen> {
     try {
       final id = await widget.dispositivoRepository.registrar(
         accessToken: widget.sesion.accessToken,
-        tipo: 'WINDOWS',
+        tipo: Platform.isAndroid ? 'ANDROID' : 'WINDOWS',
       );
       _dispositivoId = id;
       return id;

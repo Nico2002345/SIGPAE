@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
+import '../app_config.dart';
 import 'local_database.dart';
 
 class OfflineException implements Exception {
@@ -20,7 +21,7 @@ class OfflineException implements Exception {
 class AsistenciaOfflineRepository {
   AsistenciaOfflineRepository({required LocalDatabase db, String? baseUrl, http.Client? httpClient})
       : _db = db,
-        baseUrl = baseUrl ?? 'http://localhost:3000',
+        baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
         _httpClient = httpClient ?? http.Client();
 
   final LocalDatabase _db;

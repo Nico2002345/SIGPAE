@@ -5,7 +5,9 @@ import '../../core/offline/asistencia_offline_repository.dart';
 import '../../core/offline/dispositivo_repository.dart';
 import '../../core/offline/sincronizacion_service.dart';
 import '../../core/session.dart';
+import '../../core/usuarios_repository.dart';
 import '../asistencia/asistencia_screen.dart';
+import '../usuarios/crear_usuario_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -15,6 +17,7 @@ class HomeScreen extends StatelessWidget {
     required this.asistenciaOfflineRepository,
     required this.dispositivoRepository,
     required this.sincronizacionService,
+    required this.usuariosRepository,
     required this.onLogout,
   });
 
@@ -23,6 +26,7 @@ class HomeScreen extends StatelessWidget {
   final AsistenciaOfflineRepository asistenciaOfflineRepository;
   final DispositivoRepository dispositivoRepository;
   final SincronizacionService sincronizacionService;
+  final UsuariosRepository usuariosRepository;
   final VoidCallback onLogout;
 
   @override
@@ -65,6 +69,23 @@ class HomeScreen extends StatelessWidget {
                 );
               },
             ),
+            if (sesion.usuario.permisos.contains('usuarios.crear')) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                icon: const Icon(Icons.person_add_alt_1_outlined),
+                label: const Text('Crear usuario'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CrearUsuarioScreen(
+                        repository: usuariosRepository,
+                        accessToken: sesion.accessToken,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),

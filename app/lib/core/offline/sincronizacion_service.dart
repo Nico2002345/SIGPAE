@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:http/http.dart' as http;
 
+import '../app_config.dart';
 import 'asistencia_offline_repository.dart' show OfflineException;
 import 'local_database.dart';
 
@@ -22,7 +23,7 @@ class ResultadoSincronizacion {
 class SincronizacionService {
   SincronizacionService({required LocalDatabase db, String? baseUrl, http.Client? httpClient})
       : _db = db,
-        baseUrl = baseUrl ?? 'http://localhost:3000',
+        baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
         _httpClient = httpClient ?? http.Client();
 
   final LocalDatabase _db;

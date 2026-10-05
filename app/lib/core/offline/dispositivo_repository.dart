@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
+import '../app_config.dart';
 import '../token_storage.dart';
 import 'asistencia_offline_repository.dart' show OfflineException;
 
@@ -14,7 +15,7 @@ import 'asistencia_offline_repository.dart' show OfflineException;
 class DispositivoRepository {
   DispositivoRepository({TokenStorage? storage, String? baseUrl, http.Client? httpClient})
       : _storage = storage ?? const SecureTokenStorage(),
-        baseUrl = baseUrl ?? 'http://localhost:3000',
+        baseUrl = baseUrl ?? AppConfig.apiBaseUrl,
         _httpClient = httpClient ?? http.Client();
 
   final TokenStorage _storage;
@@ -42,7 +43,11 @@ class DispositivoRepository {
       res = await _httpClient.post(
         Uri.parse('$baseUrl/dispositivos/registrar'),
         headers: {'Content-Type': 'application/json', 'Authorization': 'Bearer $accessToken'},
-        body: jsonEncode({'identificadorUnico': identificadorUnico, 'tipo': tipo, 'nombre': nombre}),
+        body: jsonEncode({
+          'identificadorUnico': identificadorUnico,
+          'tipo': tipo,
+          'nombre': ?nombre,
+        }),
       );
     } catch (_) {
       throw OfflineException('Sin conexión: no se pudo registrar el dispositivo.');
