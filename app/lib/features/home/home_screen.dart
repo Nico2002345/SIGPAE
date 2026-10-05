@@ -5,11 +5,13 @@ import '../../core/offline/asistencia_offline_repository.dart';
 import '../../core/offline/dispositivo_repository.dart';
 import '../../core/entregas_repository.dart';
 import '../../core/offline/sincronizacion_service.dart';
+import '../../core/estudiantes_repository.dart';
 import '../../core/qr_repository.dart';
 import '../../core/session.dart';
 import '../../core/usuarios_repository.dart';
 import '../asistencia/asistencia_screen.dart';
 import '../entregas/escanear_qr_screen.dart';
+import '../estudiantes/crear_estudiante_screen.dart';
 import '../qr/qr_screen.dart';
 import '../usuarios/crear_usuario_screen.dart';
 
@@ -24,6 +26,7 @@ class HomeScreen extends StatelessWidget {
     required this.usuariosRepository,
     required this.qrRepository,
     required this.entregasRepository,
+    required this.estudiantesRepository,
     required this.onLogout,
   });
 
@@ -35,6 +38,7 @@ class HomeScreen extends StatelessWidget {
   final UsuariosRepository usuariosRepository;
   final QrRepository qrRepository;
   final EntregasRepository entregasRepository;
+  final EstudiantesRepository estudiantesRepository;
   final VoidCallback onLogout;
 
   @override
@@ -61,6 +65,25 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text('Rol: ${sesion.usuario.rol}'),
             const SizedBox(height: 24),
+            if (sesion.usuario.permisos.contains('estudiantes.crear_provisional') ||
+                sesion.usuario.permisos.contains('estudiantes.crear')) ...[
+              FilledButton.icon(
+                icon: const Icon(Icons.person_add_outlined),
+                label: const Text('Registrar estudiante'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => CrearEstudianteScreen(
+                        repository: estudiantesRepository,
+                        qrRepository: qrRepository,
+                        sesion: sesion,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+            ],
             FilledButton.icon(
               icon: const Icon(Icons.fact_check_outlined),
               label: const Text('Tomar asistencia'),
