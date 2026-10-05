@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>SIGPAE — Probador de API</title>
+<style>
+  :root {
+    --bg: #0f1412;
+    --panel: #161d1a;
+    --line: #28332e;
+    --ink: #eef3f0;
+    --ink-soft: #92a39b;
+    --accent: #2fd0ae;
+    --accent-ink: #06211b;
+    --get: #4da3ff;
+    --post: #2fd0ae;
+    --patch: #e0b64d;
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+  header h1 { font-size: 17px; margin: 0; font-weight: 700; }
+  header span { color: var(--ink-soft); font-size: 12.5px; font-family: var(--mono); }
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding: 20px 24px 40px;
+    max-width: 920px;
+    margin: 0 auto;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  label {
+    display: block;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  input, select, textarea {
+    width: 100%;
+    background: #0d1210;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    color: var(--ink);
+    padding: 9px 10px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  textarea { resize: vertical; min-height: 70px; }
+  .row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .row > div { flex: 1; }
+  .row .method { flex: 0 0 110px; }
+  select#method { font-weight: 700; }
+  select#method[data-m="GET"] { color: var(--get); }
+  select#method[data-m="POST"] { color: var(--post); }
+  select#method[data-m="PATCH"], select#method[data-m="PUT"] { color: var(--patch); }
+  .field { margin-bottom: 12px; }
+  .hint { font-size: 11.5px; color: var(--ink-soft); margin-top: 4px; }
+  button {
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-weight: 700;
+    font-size: 13.5px;
+    cursor: pointer;
+  }
+  button:active { transform: translateY(1px); }
+  button.ghost {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    font-weight: 500;
+  }
+  .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .presets { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .presets button { background: #1d2723; color: var(--ink-soft); font-weight: 500; font-size: 12px; padding: 6px 10px; }
+  .presets button:hover { color: var(--ink); }
+  #status-line {
+    font-family: var(--mono);
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .status-ok { color: var(--post); }
+  .status-err { color: #ff6b6b; }
+  .status-pending { color: var(--ink-soft); }
+  pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: var(--mono);
+    font-size: 12.5px;
+    max-height: 420px;
+    overflow: auto;
+  }
+  .token-banner {
+    display: none;
+    background: #15261f;
+    border: 1px solid #245244;
+    color: var(--post);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12.5px;
+    margin-top: 10px;
+    font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>SIGPAE — Probador de API</h1>
+  <span id="base-url-label"></span>
+</header>
+
+<main>
+  <div class="panel">
+    <div class="field">
+      <label for="base-url">URL base</label>
+      <input id="base-url" value="https://backend-production-3bee8.up.railway.app" />
+    </div>
+
+    <div class="row">
+      <div class="method">
+        <label for="method">Método</label>
+        <select id="method" data-m="GET">
+          <option>GET</option>
+          <option>POST</option>
+          <option>PATCH</option>
+          <option>PUT</option>
+          <option>DELETE</option>
+        </select>
+      </div>
+      <div>
+        <label for="path">Ruta</label>
+        <input id="path" value="/health" placeholder="/estudiantes?sedeId=1" />
+      </div>
+    </div>
+
+    <div class="presets" id="presets"></div>
+
+    <div class="field" style="margin-top:14px">
+      <label for="token">Authorization (token, sin "Bearer")</label>
+      <input id="token" placeholder="pegá el accessToken acá, o se autocompleta tras un login" />
+    </div>
+
+    <div class="field">
+      <label for="body">Body (JSON — se ignora en GET/DELETE)</label>
+      <textarea id="body" placeholder='{"usuarioLogin":"maestro","password":"..."}'></textarea>
+    </div>
+
+    <div class="toolbar">
+      <button id="send">Enviar</button>
+      <button class="ghost" id="clear-token">Borrar token</button>
+    </div>
+
+    <div class="token-banner" id="token-banner"></div>
+  </div>
+
+  <div class="panel">
+    <div id="status-line" class="status-pending">Sin enviar todavía.</div>
+    <pre id="response">—</pre>
+  </div>
+</main>
+
+<script>
+  const baseUrlInput = document.getElementById('base-url');
+  const methodSelect = document.getElementById('method');
+  const pathInput = document.getElementById('path');
+  const tokenInput = document.getElementById('token');
+  const bodyInput = document.getElementById('body');
+  const statusLine = document.getElementById('status-line');
+  const responseEl = document.getElementById('response');
+  const tokenBanner = document.getElementById('token-banner');
+
+  // Recordar el token entre recargas de esta pestaña/navegador.
+  tokenInput.value = localStorage.getItem('sigpae_api_tester_token') || '';
+  baseUrlInput.value = localStorage.getItem('sigpae_api_tester_base') || baseUrlInput.value;
+
+  methodSelect.addEventListener('change', () => {
+    methodSelect.dataset.m = methodSelect.value;
+  });
+
+  // Nota: a propósito no se hardcodea ninguna contraseña acá (este archivo
+  // vive en el repo) — completá el body del login vos mismo.
+  const presets = [
+    { label: 'Login', method: 'POST', path: '/auth/login',
+      body: '{\n  "usuarioLogin": "maestro",\n  "password": ""\n}' },
+    { label: 'Listar estudiantes', method: 'GET', path: '/estudiantes?estado=ACTIVO', body: '' },
+    { label: 'Listar sedes', method: 'GET', path: '/sedes', body: '' },
+    { label: 'Listar roles', method: 'GET', path: '/roles', body: '' },
+    { label: 'Health', method: 'GET', path: '/health', body: '' },
+  ];
+  const presetsEl = document.getElementById('presets');
+  presets.forEach((p) => {
+    const btn = document.createElement('button');
+    btn.textContent = p.label;
+    btn.onclick = () => {
+      methodSelect.value = p.method;
+      methodSelect.dataset.m = p.method;
+      pathInput.value = p.path;
+      bodyInput.value = p.body;
+    };
+    presetsEl.appendChild(btn);
+  });
+
+  document.getElementById('clear-token').onclick = () => {
+    tokenInput.value = '';
+    localStorage.removeItem('sigpae_api_tester_token');
+    tokenBanner.style.display = 'none';
+  };
+
+  document.getElementById('send').onclick = async () => {
+    const base = baseUrlInput.value.replace(/\/$/, '');
+    localStorage.setItem('sigpae_api_tester_base', base);
+    const method = methodSelect.value;
+    const path = pathInput.value.startsWith('/') ? pathInput.value : '/' + pathInput.value;
+    const url = base + path;
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (tokenInput.value.trim()) headers['Authorization'] = 'Bearer ' + tokenInput.value.trim();
+
+    const opts = { method, headers };
+    if (method !== 'GET' && method !== 'DELETE' && bodyInput.value.trim()) {
+      opts.body = bodyInput.value;
+    }
+
+    statusLine.className = 'status-pending';
+    statusLine.textContent = `${method} ${path} …`;
+    responseEl.textContent = '—';
+    tokenBanner.style.display = 'none';
+
+    const started = performance.now();
+    try {
+      const res = await fetch(url, opts);
+      const ms = Math.round(performance.now() - started);
+      const text = await res.text();
+      let pretty = text;
+      let parsed = null;
+      try {
+        parsed = JSON.parse(text);
+        pretty = JSON.stringify(parsed, null, 2);
+      } catch (_) {}
+
+      statusLine.className = res.ok ? 'status-ok' : 'status-err';
+      statusLine.textContent = `${method} ${path} → ${res.status} ${res.statusText} (${ms} ms)`;
+      responseEl.textContent = pretty || '(cuerpo vacío)';
+
+      if (parsed && parsed.accessToken) {
+        tokenInput.value = parsed.accessToken;
+        localStorage.setItem('sigpae_api_tester_token', parsed.accessToken);
+        tokenBanner.style.display = 'block';
+        tokenBanner.textContent = '✓ Token de la respuesta guardado en el campo Authorization de arriba.';
+      }
+    } catch (err) {
+      statusLine.className = 'status-err';
+      statusLine.textContent = `${method} ${path} → error de red`;
+      responseEl.textContent = String(err);
+    }
+  };
+
+  document.getElementById('base-url-label').textContent = baseUrlInput.value;
+  baseUrlInput.addEventListener('input', () => {
+    document.getElementById('base-url-label').textContent = baseUrlInput.value;
+  });
+</script>
+
+</body>
+</html>
