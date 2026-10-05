@@ -124,6 +124,28 @@ class QrRepository {
     return QrInfo.fromJson(data['qr'] as Map<String, dynamic>);
   }
 
+  /// Resuelve un token ya leído de un QR escaneado al estudiante dueño del
+  /// carnet (permiso `qr.escanear`: OPERADOR/MANIPULADORA/COORDINADOR_LOGISTICO
+  /// en el comedor, antes de registrar la entrega).
+  Future<EstudianteResumen> resolverToken({required String token, required String accessToken}) async {
+    final http.Response res;
+    try {
+      res = await _httpClient.get(
+        Uri.parse('$baseUrl/qr/resolver').replace(queryParameters: {'token': token}),
+        headers: {'Authorization': 'Bearer $accessToken'},
+      );
+    } catch (_) {
+      throw QrException('No se pudo conectar con el servidor.');
+    }
+
+    if (res.statusCode != 200) {
+      throw QrException(_extraerError(res.body) ?? 'QR inválido o no reconocido.');
+    }
+
+    final data = jsonDecode(res.body) as Map<String, dynamic>;
+    return EstudianteResumen.fromJson(data['estudiante'] as Map<String, dynamic>);
+  }
+
   /// Imagen del carnet como PNG (bytes), lista para mostrar con Image.memory.
   Future<List<int>> obtenerImagenQr({required String estudianteId, required String accessToken}) async {
     final http.Response res;

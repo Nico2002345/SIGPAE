@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../../core/auth_repository.dart';
 import '../../core/offline/asistencia_offline_repository.dart';
 import '../../core/offline/dispositivo_repository.dart';
+import '../../core/entregas_repository.dart';
 import '../../core/offline/sincronizacion_service.dart';
 import '../../core/qr_repository.dart';
 import '../../core/session.dart';
 import '../../core/usuarios_repository.dart';
 import '../asistencia/asistencia_screen.dart';
+import '../entregas/escanear_qr_screen.dart';
 import '../qr/qr_screen.dart';
 import '../usuarios/crear_usuario_screen.dart';
 
@@ -21,6 +23,7 @@ class HomeScreen extends StatelessWidget {
     required this.sincronizacionService,
     required this.usuariosRepository,
     required this.qrRepository,
+    required this.entregasRepository,
     required this.onLogout,
   });
 
@@ -31,6 +34,7 @@ class HomeScreen extends StatelessWidget {
   final SincronizacionService sincronizacionService;
   final UsuariosRepository usuariosRepository;
   final QrRepository qrRepository;
+  final EntregasRepository entregasRepository;
   final VoidCallback onLogout;
 
   @override
@@ -100,6 +104,24 @@ class HomeScreen extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => QrScreen(
                         repository: qrRepository,
+                        accessToken: sesion.accessToken,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+            if (sesion.usuario.permisos.contains('qr.escanear')) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                icon: const Icon(Icons.qr_code_scanner),
+                label: const Text('Escanear QR (entregas)'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => EscanearQrScreen(
+                        qrRepository: qrRepository,
+                        entregasRepository: entregasRepository,
                         accessToken: sesion.accessToken,
                       ),
                     ),
