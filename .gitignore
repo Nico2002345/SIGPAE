@@ -4,6 +4,10 @@ dist/
 .env
 *.log
 
+# Datos reales con información personal (SIMAT, carnets, etc.) — nunca al repo
+*.xlsx
+*.xls
+
 # Flutter / Dart
 app/.dart_tool/
 app/.flutter-plugin-dependencies

@@ -5,6 +5,7 @@ import 'core/offline/asistencia_offline_repository.dart';
 import 'core/offline/dispositivo_repository.dart';
 import 'core/offline/local_database.dart';
 import 'core/offline/sincronizacion_service.dart';
+import 'core/qr_repository.dart';
 import 'core/session.dart';
 import 'core/usuarios_repository.dart';
 import 'features/auth/login_screen.dart';
@@ -18,6 +19,7 @@ void main() {
     dispositivoRepository: DispositivoRepository(),
     sincronizacionService: SincronizacionService(db: localDatabase),
     usuariosRepository: UsuariosRepository(),
+    qrRepository: QrRepository(),
   ));
 }
 
@@ -29,18 +31,21 @@ class SigpaeApp extends StatelessWidget {
     DispositivoRepository? dispositivoRepository,
     SincronizacionService? sincronizacionService,
     UsuariosRepository? usuariosRepository,
+    QrRepository? qrRepository,
   })  : authRepository = authRepository ?? AuthRepository(),
         asistenciaOfflineRepository =
             asistenciaOfflineRepository ?? AsistenciaOfflineRepository(db: LocalDatabase()),
         dispositivoRepository = dispositivoRepository ?? DispositivoRepository(),
         sincronizacionService = sincronizacionService ?? SincronizacionService(db: LocalDatabase()),
-        usuariosRepository = usuariosRepository ?? UsuariosRepository();
+        usuariosRepository = usuariosRepository ?? UsuariosRepository(),
+        qrRepository = qrRepository ?? QrRepository();
 
   final AuthRepository authRepository;
   final AsistenciaOfflineRepository asistenciaOfflineRepository;
   final DispositivoRepository dispositivoRepository;
   final SincronizacionService sincronizacionService;
   final UsuariosRepository usuariosRepository;
+  final QrRepository qrRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -53,6 +58,7 @@ class SigpaeApp extends StatelessWidget {
         dispositivoRepository: dispositivoRepository,
         sincronizacionService: sincronizacionService,
         usuariosRepository: usuariosRepository,
+        qrRepository: qrRepository,
       ),
     );
   }
@@ -66,6 +72,7 @@ class RaizAutenticacion extends StatefulWidget {
     required this.dispositivoRepository,
     required this.sincronizacionService,
     required this.usuariosRepository,
+    required this.qrRepository,
   });
 
   final AuthRepository authRepository;
@@ -73,6 +80,7 @@ class RaizAutenticacion extends StatefulWidget {
   final DispositivoRepository dispositivoRepository;
   final SincronizacionService sincronizacionService;
   final UsuariosRepository usuariosRepository;
+  final QrRepository qrRepository;
 
   @override
   State<RaizAutenticacion> createState() => _RaizAutenticacionState();
@@ -117,6 +125,7 @@ class _RaizAutenticacionState extends State<RaizAutenticacion> {
       dispositivoRepository: widget.dispositivoRepository,
       sincronizacionService: widget.sincronizacionService,
       usuariosRepository: widget.usuariosRepository,
+      qrRepository: widget.qrRepository,
       onLogout: () => setState(() => _sesion = null),
     );
   }

@@ -4,9 +4,11 @@ import '../../core/auth_repository.dart';
 import '../../core/offline/asistencia_offline_repository.dart';
 import '../../core/offline/dispositivo_repository.dart';
 import '../../core/offline/sincronizacion_service.dart';
+import '../../core/qr_repository.dart';
 import '../../core/session.dart';
 import '../../core/usuarios_repository.dart';
 import '../asistencia/asistencia_screen.dart';
+import '../qr/qr_screen.dart';
 import '../usuarios/crear_usuario_screen.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -18,6 +20,7 @@ class HomeScreen extends StatelessWidget {
     required this.dispositivoRepository,
     required this.sincronizacionService,
     required this.usuariosRepository,
+    required this.qrRepository,
     required this.onLogout,
   });
 
@@ -27,6 +30,7 @@ class HomeScreen extends StatelessWidget {
   final DispositivoRepository dispositivoRepository;
   final SincronizacionService sincronizacionService;
   final UsuariosRepository usuariosRepository;
+  final QrRepository qrRepository;
   final VoidCallback onLogout;
 
   @override
@@ -79,6 +83,23 @@ class HomeScreen extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => CrearUsuarioScreen(
                         repository: usuariosRepository,
+                        accessToken: sesion.accessToken,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+            if (sesion.usuario.permisos.contains('qr.generar')) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                icon: const Icon(Icons.qr_code),
+                label: const Text('Carnet QR de estudiante'),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => QrScreen(
+                        repository: qrRepository,
                         accessToken: sesion.accessToken,
                       ),
                     ),
