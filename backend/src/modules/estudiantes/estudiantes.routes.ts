@@ -3,6 +3,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../middleware/asyncHandler.js";
 import { HttpError } from "../../middleware/errorHandler.js";
 import { authenticate, authorize } from "../auth/auth.middleware.js";
+import { enviarComoExcel } from "../reportes/excel.js";
 import * as estudiantesService from "./estudiantes.service.js";
 
 export const estudiantesRouter = Router();
@@ -67,14 +68,19 @@ const listarEstudiantesSchema = z.object({
   estado: estadoEstudianteSchema.optional(),
   busqueda: z.string().min(1).optional(),
   esCapacitacion: z.coerce.boolean().optional(),
+  formato: z.enum(["json", "excel"]).default("json"),
 });
 
 estudiantesRouter.get(
   "/",
   authorize("estudiantes.ver"),
   asyncHandler(async (req, res) => {
-    const query = listarEstudiantesSchema.parse(req.query);
-    const estudiantes = await estudiantesService.listarEstudiantes(query);
+    const { formato, ...filtros } = listarEstudiantesSchema.parse(req.query);
+    const estudiantes = await estudiantesService.listarEstudiantes(filtros);
+    if (formato === "excel") {
+      await enviarComoExcel(res, "estudiantes", estudiantes);
+      return;
+    }
     res.json({ estudiantes });
   }),
 );
