@@ -134,6 +134,12 @@ export const ESCENARIOS_CAPACITACION = [
 // Reglas de negocio (ver docs de Fase 0): un docente puede consultar estudiantes,
 // crear/editar provisionales e informar retiros, pero no tocar datos maestros de SIMAT.
 const PERMISOS_POR_ROL: Record<string, string[]> = {
+  // SUBMAESTRO normalmente tiene permisos individuales configurables por
+  // usuario (vía permisos-extra), no un paquete fijo de rol — esta base de
+  // solo-exportación es una excepción pedida explícitamente por el usuario
+  // el 2026-10-05 para que todo submaestro pueda exportar sin configurar
+  // cada uno a mano.
+  SUBMAESTRO: ["estudiantes.ver", "reportes.ver"],
   DOCENTE: [
     "estudiantes.ver",
     "estudiantes.crear_provisional",
