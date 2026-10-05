@@ -10,6 +10,7 @@ import { dispositivosRouter } from "./modules/dispositivos/dispositivos.routes.j
 import { entregasRouter } from "./modules/entregas/entregas.routes.js";
 import { estudiantesRouter } from "./modules/estudiantes/estudiantes.routes.js";
 import { gradosRouter } from "./modules/estructura/grados.routes.js";
+import { importacionesSimatRouter } from "./modules/importaciones/importacionSimat.routes.js";
 import { jornadasRouter } from "./modules/jornadas/jornadas.routes.js";
 import { gruposRouter } from "./modules/estructura/grupos.routes.js";
 import { institucionesRouter } from "./modules/estructura/instituciones.routes.js";
@@ -41,6 +42,7 @@ export function createApp(): Express {
   app.use("/grados", gradosRouter);
   app.use("/grupos", gruposRouter);
   app.use("/estudiantes", estudiantesRouter);
+  app.use("/importaciones-simat", importacionesSimatRouter);
   app.use("/qr", qrRouter);
   app.use("/jornadas", jornadasRouter);
   app.use("/asistencia", asistenciaRouter);

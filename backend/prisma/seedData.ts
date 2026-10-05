@@ -61,6 +61,11 @@ export const PERMISOS = [
     modulo: "estudiantes",
     descripcion: "Vincular un estudiante provisional con su registro oficial de SIMAT",
   },
+  {
+    codigo: "estudiantes.importar",
+    modulo: "estudiantes",
+    descripcion: "Importar el archivo SIMAT y aplicar o descartar sus cambios masivos",
+  },
 
   { codigo: "qr.generar", modulo: "qr", descripcion: "Generar, reemitir o revocar el QR de un estudiante" },
   { codigo: "qr.ver", modulo: "qr", descripcion: "Consultar el QR e imagen de carnet de un estudiante" },
